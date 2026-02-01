@@ -57,6 +57,18 @@ Electron desktop app with React front end, Rust CV/ML core exposed to Node via N
 - Metrics: per-page timing, angle corrections, warp error, detection confidences.
 - Guardrails: fail on suspicious crops, extreme warps, or low-confidence bounds; route to QA queue.
 
+## Current Pipeline Evaluation (Mind, Myth and Magick)
+
+- Run scope: 783 pages (full corpus), target 300 DPI, 210x297 mm; uniform 1275x1650 px after scan/analyze.
+- Performance: ~3495 pages/sec (simulated pipeline), avg 0.29 ms/page; throughput sufficient for desktop batches.
+- Gaps observed: bleed/trim fell back to defaults (JPEG SOF marker parsing needs hardening); no Rust CV stages yet; sidecar emission not wired.
+- Immediate actions:
+  - Harden JPEG dimension probing (SOF parsing + larger window), add checksum-aware failures.
+  - Wire Rust pipeline-core for deskew/dewarp/detect; run golden image tests when available.
+  - Emit JSON sidecars matching spec/page_layout_schema.json alongside normalized outputs.
+  - Add per-page parallelism/batching in orchestrator for large corpora.
+  - Keep pipeline-results/ artifacts gitignored to avoid noise in CI.
+
 ## Roadmap Hooks
 
 - Remote accelerator toggle per model.

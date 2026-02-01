@@ -2,15 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AsteriaPageLayout",
   "type": "object",
-  "required": [
-    "pageId",
-    "source",
-    "dimensions",
-    "dpi",
-    "elements",
-    "normalization",
-    "metrics"
-  ],
+  "required": ["pageId", "source", "dimensions", "dpi", "elements", "normalization", "metrics"],
   "properties": {
     "pageId": { "type": "string", "description": "Stable page identifier" },
     "source": {
@@ -36,12 +28,24 @@
       "type": "object",
       "properties": {
         "skewAngle": { "type": "number", "description": "Degrees clockwise" },
+        "dpiSource": {
+          "type": "string",
+          "enum": ["metadata", "inferred", "fallback"],
+          "description": "Source of DPI/physical size"
+        },
         "warp": {
           "type": "object",
           "properties": {
             "method": { "type": "string" },
             "residual": { "type": "number" }
           }
+        },
+        "pageMask": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[x0,y0,x1,y1] mask bounds in output pixels"
         },
         "cropBox": {
           "type": "array",
@@ -52,7 +56,17 @@
         },
         "scale": { "type": "number" },
         "bleed": { "type": "number", "description": "Bleed in output units" },
-        "trim": { "type": "number", "description": "Trim in output units" }
+        "trim": { "type": "number", "description": "Trim in output units" },
+        "shadow": {
+          "type": "object",
+          "properties": {
+            "present": { "type": "boolean" },
+            "side": { "type": "string", "enum": ["left", "right", "top", "bottom", "none"] },
+            "widthPx": { "type": "number" },
+            "confidence": { "type": "number" },
+            "darkness": { "type": "number" }
+          }
+        }
       }
     },
     "elements": {
@@ -97,7 +111,11 @@
         "deskewConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "warpScore": { "type": "number" },
         "layoutScore": { "type": "number" },
-        "processingMs": { "type": "integer", "minimum": 0 }
+        "processingMs": { "type": "integer", "minimum": 0 },
+        "maskCoverage": { "type": "number" },
+        "shadowScore": { "type": "number" },
+        "backgroundStd": { "type": "number" },
+        "backgroundMean": { "type": "number" }
       }
     },
     "decisions": {

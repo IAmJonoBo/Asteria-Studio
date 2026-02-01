@@ -7,6 +7,7 @@ export interface PageData {
   id: string;
   filename: string;
   originalPath: string;
+  checksum?: string;
   confidenceScores: Record<string, number>;
 }
 
@@ -39,6 +40,7 @@ export interface CorpusSummary {
   projectId: string;
   pageCount: number;
   dpi: number;
+  targetDimensionsMm: { width: number; height: number };
   targetDimensionsPx: { width: number; height: number };
   estimates: PageBoundsEstimate[];
   notes?: string;

@@ -20,7 +20,10 @@ const buildConfig = (): PipelineRunConfig => ({
   targetDimensionsMm: { width: 210, height: 297 },
 });
 
-const mockDimensions = async () => ({ width: 2480, height: 3508 });
+const mockDimensions = async (): Promise<{ width: number; height: number }> => ({
+  width: 2480,
+  height: 3508,
+});
 
 describe("corpusAnalysis", () => {
   it("converts mm to px using dpi", () => {
@@ -64,6 +67,10 @@ describe("corpusAnalysis", () => {
   it("probes JPEG dimensions when available", async () => {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-corpus-"));
     const jpegPath = path.join(tmpDir, "probe.jpg");
+    const relativePath = path.relative(tmpDir, jpegPath);
+    if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+      throw new Error("Refusing to write outside temp directory");
+    }
 
     // Minimal JPEG with width=32, height=16
     const jpegBuffer = Buffer.from([

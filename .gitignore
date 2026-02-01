@@ -20,6 +20,7 @@ coverage/
 apps/asteria-desktop/dist/
 apps/asteria-desktop/.vite/
 apps/asteria-desktop/node_modules/
+apps/asteria-desktop/pipeline-results/
 packages/ui-kit/dist/
 packages/ui-kit/node_modules/
 

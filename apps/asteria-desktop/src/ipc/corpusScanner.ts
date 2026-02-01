@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
-import type { PipelineRunConfig, ScanCorpusOptions } from "./contracts";
+import type { PipelineRunConfig, ScanCorpusOptions } from "./contracts.ts";
 
 const DEFAULT_TARGET_DPI = 400;
 const DEFAULT_DIMENSIONS_MM = { width: 210, height: 297 };
