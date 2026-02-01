@@ -1,0 +1,66 @@
+# Default pipeline configuration for Asteria Studio
+version: 0.1.0
+project:
+  name: ""
+  target_dimensions:
+    width: 210 # mm default A5 width
+    height: 297 # mm default A5 height
+    unit: mm
+  dpi: 400
+  bleed_mm: 3
+  trim_mm: 0
+  color_profile: sRGB
+  storage: local
+models:
+  execution_mode: auto # auto | local | remote
+  endpoints:
+    remote_url: "" # optional remote accelerator endpoint
+  ocr:
+    engine: tesseract
+    languages: ["eng"]
+  detector:
+    name: layout-detector
+    version: "0.1.0"
+  dewarp:
+    name: dewarp-unet
+    version: "0.1.0"
+steps:
+  ingest:
+    enabled: true
+    checksum: sha256
+  preprocess:
+    enabled: true
+    denoise: true
+    contrast_enhance: true
+    binarize_for_hints: true
+  deskew:
+    enabled: true
+    max_angle: 5.0
+    quality_threshold: 0.7
+  dewarp:
+    enabled: true
+    quality_threshold: 0.6
+  layout_detect:
+    enabled: true
+    confidence_threshold: 0.4
+    nms_iou: 0.3
+  normalize:
+    enabled: true
+    snap_to_grid: true
+    preserve_aspect: true
+    bleed_mm: 3
+    trim_mm: 0
+  qa:
+    enabled: true
+    route_low_confidence: true
+    confidence_floor: 0.5
+    warp_score_ceiling: 0.25
+export:
+  formats: [png, tiff]
+  include_pdf: true
+  include_json_sidecars: true
+  naming: "{projectId}_{pageId}_{runId}"
+logging:
+  level: info
+  per_page_logs: true
+  keep_logs: true
