@@ -1,5 +1,7 @@
 # Asteria Studio
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/427a86553dc34b87b99726b5ca8b6e6a)](https://app.codacy.com/gh/IAmJonoBo/Asteria-Studio?utm_source=github.com&utm_medium=referral&utm_content=IAmJonoBo/Asteria-Studio&utm_campaign=Badge_Grade)
+
 Enterprise-grade, offline-first desktop app to normalize scanned pages (deskew, dewarp, crop, layout harmonization) with confidence-scored element detection and designer-friendly QA.
 
 ## Current Status
