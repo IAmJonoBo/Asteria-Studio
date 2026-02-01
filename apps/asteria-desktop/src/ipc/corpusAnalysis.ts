@@ -24,30 +24,29 @@ export const computeTargetDimensionsPx = (
 type DimensionProvider = (filePath: string) => Promise<{ width: number; height: number } | null>;
 
 const probeJpegSize: DimensionProvider = async (filePath) => {
-  const handle = await fs.open(filePath, "r");
-  try {
-    const buffer = Buffer.allocUnsafe(64 * 1024); // read first 64KB
-    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
-    if (bytesRead < 4) return null;
+  const MAX_BYTES = 2 * 1024 * 1024; // cap probe size to avoid large reads
+  const data = await fs.readFile(filePath);
+  const buffer = data.length > MAX_BYTES ? data.subarray(0, MAX_BYTES) : data;
+  if (buffer.length < 4) return null;
 
-    let offset = 2; // skip SOI
-    while (offset + 9 < bytesRead) {
-      if (buffer[offset] !== 0xff) {
-        offset += 1;
-        continue;
-      }
-      const marker = buffer[offset + 1];
-      const length = buffer.readUInt16BE(offset + 2);
-      if (JPEG_SOF_MARKERS.has(marker)) {
-        const height = buffer.readUInt16BE(offset + 5);
-        const width = buffer.readUInt16BE(offset + 7);
-        return { width, height };
-      }
-      if (length <= 2) break;
-      offset += 2 + length;
+  let offset = 2; // skip SOI
+  while (offset + 9 < buffer.length) {
+    if (buffer[offset] !== 0xff) {
+      offset += 1;
+      continue;
     }
-  } finally {
-    await handle.close();
+    const marker = buffer[offset + 1];
+    const length = buffer.readUInt16BE(offset + 2);
+    if (JPEG_SOF_MARKERS.has(marker)) {
+      const height = buffer.readUInt16BE(offset + 5);
+      const width = buffer.readUInt16BE(offset + 7);
+      return { width, height };
+    }
+    if (length <= 2) {
+      offset += 1;
+      continue;
+    }
+    offset += 2 + length;
   }
   return null;
 };
@@ -108,6 +107,7 @@ export const analyzeCorpus = async (config: PipelineRunConfig): Promise<CorpusSu
     projectId: config.projectId,
     pageCount: config.pages.length,
     dpi: config.targetDpi,
+    targetDimensionsMm: config.targetDimensionsMm,
     targetDimensionsPx: targetPx,
     estimates: bounds,
     notes:
