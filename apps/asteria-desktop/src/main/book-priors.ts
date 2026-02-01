@@ -6,6 +6,7 @@ import type {
   OrnamentAnchor,
   RunningHeadTemplate,
 } from "../ipc/contracts.ts";
+import { getPipelineCoreNative } from "./pipeline-core-native.ts";
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
@@ -15,6 +16,15 @@ export type BandSpec = {
 };
 
 const computeDHash = (data: Uint8Array, width: number, height: number): string => {
+  const native = getPipelineCoreNative();
+  if (native && width === 9 && height === 8 && data.length >= 72) {
+    try {
+      return native.dhash9x8(Buffer.from(data.subarray(0, 72)));
+    } catch {
+      // fall through to JS implementation
+    }
+  }
+
   let bits = "";
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width - 1; x++) {
