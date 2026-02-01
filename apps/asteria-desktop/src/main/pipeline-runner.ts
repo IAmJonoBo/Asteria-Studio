@@ -21,6 +21,7 @@ import type {
 import { scanCorpus } from "../ipc/corpusScanner.ts";
 import { analyzeCorpus, computeTargetDimensionsPx } from "../ipc/corpusAnalysis.ts";
 import { deriveBookModelFromImages } from "./book-priors.ts";
+import { getPipelineCoreNative } from "./pipeline-core-native.ts";
 import {
   normalizePage,
   type NormalizationResult,
@@ -1132,6 +1133,11 @@ export async function runPipeline(options: PipelineRunnerOptions): Promise<Pipel
   const startTime = Date.now();
   const runId = `run-${Date.now()}`;
   const errors: Array<{ phase: string; message: string }> = [];
+
+  const native = getPipelineCoreNative();
+  console.log(
+    `[${runId}] Native pipeline-core ${native ? "enabled" : "unavailable; using JS fallbacks"}`
+  );
 
   try {
     // Phase 1: Scan corpus
