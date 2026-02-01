@@ -1,0 +1,13 @@
+{
+  "name": "asteria-studio",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "echo 'todo: add lint'",
+    "test": "echo 'todo: add tests'"
+  }
+}
