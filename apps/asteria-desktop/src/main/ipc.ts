@@ -15,6 +15,7 @@ import type {
 } from "../ipc/contracts";
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import {
   validateExportFormats,
   validateImportCorpusRequest,
@@ -27,7 +28,16 @@ import { analyzeCorpus } from "../ipc/corpusAnalysis";
 import { scanCorpus } from "../ipc/corpusScanner";
 import { startRun, cancelRun, pauseRun, resumeRun } from "./run-manager";
 import { loadPipelineConfig, loadProjectOverrides, resolvePipelineConfig } from "./pipeline-config";
-import { getRunDir, getRunManifestPath, getRunSidecarPath } from "./run-paths";
+import {
+  getRunDir,
+  getRunManifestPath,
+  getRunReportPath,
+  getRunReviewQueuePath,
+  getRunSidecarPath,
+  getNormalizedDir,
+  getSidecarDir,
+} from "./run-paths";
+import { writeJsonAtomic } from "./file-utils";
 import { importCorpus, listProjects } from "./projects";
 
 type ExportFormat = "png" | "tiff" | "pdf";
@@ -35,25 +45,33 @@ type ExportFormat = "png" | "tiff" | "pdf";
 const listFilesByExtension = (files: string[], extensions: string[]): string[] =>
   files.filter((file) => extensions.some((ext) => file.toLowerCase().endsWith(ext)));
 
-const copyFormatExports = async (params: {
+const exportNormalizedByFormat = async (params: {
   format: ExportFormat;
   exportDir: string;
   normalizedDir: string;
   normalizedFiles: string[];
 }): Promise<void> => {
-  const extensionsByFormat: Record<ExportFormat, string[]> = {
-    png: [".png"],
-    tiff: [".tif", ".tiff"],
-    pdf: [".pdf"],
-  };
   const formatDir = path.join(params.exportDir, params.format);
   await fs.mkdir(formatDir, { recursive: true });
-  const extensions = extensionsByFormat[params.format];
-  const filesToCopy = listFilesByExtension(params.normalizedFiles, extensions);
+  const sourceFiles = listFilesByExtension(params.normalizedFiles, [".png"]);
+
   await Promise.all(
-    filesToCopy.map((file) =>
-      fs.copyFile(path.join(params.normalizedDir, file), path.join(formatDir, file))
-    )
+    sourceFiles.map(async (file) => {
+      const src = path.join(params.normalizedDir, file);
+      if (params.format === "png") {
+        await fs.copyFile(src, path.join(formatDir, file));
+        return;
+      }
+      if (params.format === "tiff") {
+        const dest = path.join(formatDir, file.replace(/\.png$/i, ".tiff"));
+        await sharp(src).tiff({ compression: "lzw" }).toFile(dest);
+        return;
+      }
+      if (params.format === "pdf") {
+        const dest = path.join(formatDir, file.replace(/\.png$/i, ".pdf"));
+        await sharp(src).toFormat("pdf").toFile(dest);
+      }
+    })
   );
 };
 
@@ -65,6 +83,23 @@ const copyFormatExports = async (params: {
 export function registerIpcHandlers(): void {
   const resolveOutputDir = (): string =>
     process.env.ASTERIA_OUTPUT_DIR ?? path.join(process.cwd(), "pipeline-results");
+  const resolveRunDir = async (outputDir: string, runId: string): Promise<string> => {
+    const indexPath = path.join(outputDir, "run-index.json");
+    try {
+      const raw = await fs.readFile(indexPath, "utf-8");
+      const parsed = JSON.parse(raw) as {
+        runs?: Array<{ runId: string; reportPath?: string; reviewQueuePath?: string }>;
+      };
+      const entry = parsed.runs?.find((run) => run.runId === runId);
+      const hint = entry?.reportPath ?? entry?.reviewQueuePath;
+      if (hint) {
+        return path.dirname(hint);
+      }
+    } catch {
+      // fall through to deterministic run dir
+    }
+    return getRunDir(outputDir, runId);
+  };
 
   ipcMain.handle(
     "asteria:start-run",
@@ -148,9 +183,8 @@ export function registerIpcHandlers(): void {
       validateRunId(runId);
       validatePageId(pageId);
       const outputDir = resolveOutputDir();
-      const runDir = getRunDir(outputDir, runId);
+      const runDir = await resolveRunDir(outputDir, runId);
       const runSidecarPath = getRunSidecarPath(runDir, pageId);
-      const legacySidecarPath = path.join(outputDir, "sidecars", `${pageId}.json`);
 
       try {
         const raw = await fs.readFile(runSidecarPath, "utf-8");
@@ -163,24 +197,12 @@ export function registerIpcHandlers(): void {
           confidenceScores: {},
         };
       } catch {
-        try {
-          const raw = await fs.readFile(legacySidecarPath, "utf-8");
-          const sidecar = JSON.parse(raw) as { source?: { path?: string } };
-          const originalPath = sidecar.source?.path ?? "";
-          return {
-            id: pageId,
-            filename: path.basename(originalPath || pageId),
-            originalPath,
-            confidenceScores: {},
-          };
-        } catch {
-          return {
-            id: pageId,
-            filename: `page-${pageId}.png`,
-            originalPath: "",
-            confidenceScores: {},
-          };
-        }
+        return {
+          id: pageId,
+          filename: `page-${pageId}.png`,
+          originalPath: "",
+          confidenceScores: {},
+        };
       }
     }
   );
@@ -191,35 +213,38 @@ export function registerIpcHandlers(): void {
       validateRunId(runId);
       validatePageId(pageId);
       const outputDir = resolveOutputDir();
-      const runDir = getRunDir(outputDir, runId);
+      const runDir = await resolveRunDir(outputDir, runId);
       const runSidecarPath = getRunSidecarPath(runDir, pageId);
-      const legacySidecarPath = path.join(outputDir, "sidecars", `${pageId}.json`);
       try {
         const raw = await fs.readFile(runSidecarPath, "utf-8");
         return JSON.parse(raw);
       } catch {
-        try {
-          const raw = await fs.readFile(legacySidecarPath, "utf-8");
-          return JSON.parse(raw);
-        } catch {
-          return null;
-        }
+        return null;
       }
     }
   );
 
   ipcMain.handle(
     "asteria:apply-override",
-    async (_event: IpcMainInvokeEvent, pageId: string, overrides: Record<string, unknown>) => {
+    async (
+      _event: IpcMainInvokeEvent,
+      runId: string,
+      pageId: string,
+      overrides: Record<string, unknown>
+    ) => {
+      validateRunId(runId);
       validatePageId(pageId);
       validateOverrides(overrides);
-      const overridesDir = path.join(resolveOutputDir(), "overrides");
+      const outputDir = resolveOutputDir();
+      const runDir = await resolveRunDir(outputDir, runId);
+      const overridesDir = path.join(runDir, "overrides");
       await fs.mkdir(overridesDir, { recursive: true });
       const overridePath = path.join(overridesDir, `${pageId}.json`);
-      await fs.writeFile(
-        overridePath,
-        JSON.stringify({ pageId, overrides, appliedAt: new Date().toISOString() }, null, 2)
-      );
+      await writeJsonAtomic(overridePath, {
+        pageId,
+        overrides,
+        appliedAt: new Date().toISOString(),
+      });
     }
   );
 
@@ -229,13 +254,14 @@ export function registerIpcHandlers(): void {
       validateRunId(runId);
       validateExportFormats(formats);
       const outputDir = resolveOutputDir();
-      const runDir = getRunDir(outputDir, runId);
+      const runDir = await resolveRunDir(outputDir, runId);
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const exportDir = path.join(runDir, "exports", timestamp);
       await fs.mkdir(exportDir, { recursive: true });
 
       const manifestPath = getRunManifestPath(runDir);
-      const reportPath = path.join(runDir, "report.json");
+      const reportPath = getRunReportPath(runDir);
+      const reviewQueuePath = getRunReviewQueuePath(runDir);
       try {
         await fs.copyFile(manifestPath, path.join(exportDir, "manifest.json"));
       } catch {
@@ -246,8 +272,27 @@ export function registerIpcHandlers(): void {
       } catch {
         // ignore missing report
       }
+      try {
+        await fs.copyFile(reviewQueuePath, path.join(exportDir, "review-queue.json"));
+      } catch {
+        // ignore missing review queue
+      }
 
-      const normalizedDir = path.join(runDir, "normalized");
+      const sidecarDir = getSidecarDir(runDir);
+      const sidecarExportDir = path.join(exportDir, "sidecars");
+      try {
+        const sidecarFiles = await fs.readdir(sidecarDir);
+        await fs.mkdir(sidecarExportDir, { recursive: true });
+        await Promise.all(
+          sidecarFiles.map((file) =>
+            fs.copyFile(path.join(sidecarDir, file), path.join(sidecarExportDir, file))
+          )
+        );
+      } catch {
+        // ignore missing sidecars
+      }
+
+      const normalizedDir = getNormalizedDir(runDir);
       let normalizedFiles: string[] = [];
       try {
         normalizedFiles = await fs.readdir(normalizedDir);
@@ -257,7 +302,7 @@ export function registerIpcHandlers(): void {
 
       await Promise.all(
         formats.map((format) =>
-          copyFormatExports({ format, exportDir, normalizedDir, normalizedFiles })
+          exportNormalizedByFormat({ format, exportDir, normalizedDir, normalizedFiles })
         )
       );
 
@@ -351,23 +396,9 @@ export function registerIpcHandlers(): void {
         }));
       }
     } catch {
-      // fall through to legacy scan
-    }
-
-    try {
-      const entries = await fs.readdir(outputDir);
-      const legacyRuns = entries
-        .filter((entry) => entry.endsWith("-review-queue.json"))
-        .map((entry) => ({
-          runId: entry.replace(/-review-queue\.json$/, ""),
-          projectId: "unknown",
-          generatedAt: "",
-          reviewCount: 0,
-        }));
-      return legacyRuns;
-    } catch {
       return [];
     }
+    return [];
   });
 
   ipcMain.handle(
@@ -375,23 +406,8 @@ export function registerIpcHandlers(): void {
     async (_event: IpcMainInvokeEvent, runId: string): Promise<ReviewQueue> => {
       validateRunId(runId);
       const outputDir = resolveOutputDir();
-      const indexPath = path.join(outputDir, "run-index.json");
-      let reviewPath = path.join(outputDir, `${runId}-review-queue.json`);
-      try {
-        const raw = await fs.readFile(indexPath, "utf-8");
-        const parsed = JSON.parse(raw) as {
-          runs?: Array<{ runId: string; reviewQueuePath?: string }>;
-        };
-        const entry = parsed.runs?.find((run) => run.runId === runId);
-        if (entry?.reviewQueuePath) {
-          reviewPath = entry.reviewQueuePath;
-        } else {
-          const runDir = path.join(outputDir, "runs", runId, "review-queue.json");
-          reviewPath = runDir;
-        }
-      } catch {
-        // use fallback path
-      }
+      const runDir = await resolveRunDir(outputDir, runId);
+      const reviewPath = getRunReviewQueuePath(runDir);
       try {
         const data = await fs.readFile(reviewPath, "utf-8");
         return JSON.parse(data) as ReviewQueue;
@@ -418,18 +434,11 @@ export function registerIpcHandlers(): void {
       const reviewDir = path.join(resolveOutputDir(), "reviews");
       await fs.mkdir(reviewDir, { recursive: true });
       const reviewPath = path.join(reviewDir, `${runId}.json`);
-      await fs.writeFile(
-        reviewPath,
-        JSON.stringify(
-          {
-            runId,
-            submittedAt: new Date().toISOString(),
-            decisions,
-          },
-          null,
-          2
-        )
-      );
+      await writeJsonAtomic(reviewPath, {
+        runId,
+        submittedAt: new Date().toISOString(),
+        decisions,
+      });
     }
   );
 }
