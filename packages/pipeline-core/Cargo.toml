@@ -7,5 +7,5 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-napi = { version = "2", features = ["napi8"] }
+napi = { version = "3", features = ["napi8"] }
 napi-derive = "2"
