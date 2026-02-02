@@ -25,7 +25,7 @@ export function RunsScreen({
   const [runConfig, setRunConfig] = useState<RunConfigSnapshot | null>(null);
   const [runConfigError, setRunConfigError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let cancelled = false;
     const loadRuns = async (): Promise<void> => {
       const windowRef: typeof globalThis & { asteria?: { ipc?: Record<string, unknown> } } =
@@ -60,7 +60,7 @@ export function RunsScreen({
     };
   }, []);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let cancelled = false;
     const loadRunConfig = async (): Promise<void> => {
       if (!selectedRunId) {
@@ -253,12 +253,12 @@ export function RunsScreen({
 export function MonitorScreen(): JSX.Element {
   const [progressByRun, setProgressByRun] = useState<Record<string, RunProgressEvent>>({});
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const windowRef: typeof globalThis & {
       asteria?: { onRunProgress?: (handler: (event: RunProgressEvent) => void) => () => void };
     } = globalThis;
     if (!windowRef.asteria?.onRunProgress) return;
-    const unsubscribe = windowRef.asteria.onRunProgress((event) => {
+    const unsubscribe = windowRef.asteria.onRunProgress((event): void => {
       setProgressByRun((prev) => ({ ...prev, [event.runId]: event }));
     });
     return () => {
@@ -372,7 +372,7 @@ export function ExportsScreen(): JSX.Element {
   const [exportPath, setExportPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let cancelled = false;
     const loadRuns = async (): Promise<void> => {
       const windowRef: typeof globalThis & { asteria?: { ipc?: Record<string, unknown> } } =
@@ -539,7 +539,7 @@ export function SettingsScreen({ projectId }: Readonly<SettingsScreenProps>): JS
     qaSemanticBody: "",
   });
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let cancelled = false;
     const loadConfig = async (): Promise<void> => {
       const windowRef: typeof globalThis & { asteria?: { ipc?: Record<string, unknown> } } =

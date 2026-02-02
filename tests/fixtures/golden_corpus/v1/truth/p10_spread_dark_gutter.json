@@ -1,0 +1,29 @@
+{
+  "pageId": "p10_spread_dark_gutter",
+  "pageBoundsPx": [
+    0,
+    0,
+    4349,
+    3074
+  ],
+  "contentBoxPx": [
+    140,
+    140,
+    4210,
+    2935
+  ],
+  "gutter": {
+    "side": "center",
+    "widthPx": 220
+  },
+  "baselineGrid": {
+    "medianSpacingPx": 22.83
+  },
+  "ornaments": [],
+  "shouldSplit": true,
+  "expectedReviewReasons": [
+    "low-shading-confidence",
+    "residual-skew-*",
+    "spread-split-low-confidence"
+  ]
+}

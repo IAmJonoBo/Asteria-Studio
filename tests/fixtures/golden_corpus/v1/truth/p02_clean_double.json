@@ -1,0 +1,28 @@
+{
+  "pageId": "p02_clean_double",
+  "pageBoundsPx": [
+    0,
+    0,
+    2174,
+    3074
+  ],
+  "contentBoxPx": [
+    140,
+    180,
+    2035,
+    2935
+  ],
+  "gutter": {
+    "side": "none",
+    "widthPx": 0
+  },
+  "baselineGrid": {
+    "medianSpacingPx": 28.67
+  },
+  "ornaments": [],
+  "shouldSplit": false,
+  "expectedReviewReasons": [
+    "low-shading-confidence",
+    "residual-skew-*"
+  ]
+}

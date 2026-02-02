@@ -5,6 +5,7 @@
  */
 
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import sharp from "sharp";
 import crypto from "node:crypto";
@@ -59,9 +60,11 @@ const safeReadJson = async <T>(filePath: string): Promise<T | null> => {
   }
 };
 
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+
 const getAppVersion = async (): Promise<string> => {
   const cwdPackage = path.join(process.cwd(), "package.json");
-  const fallbackPackage = path.resolve(__dirname, "..", "..", "package.json");
+  const fallbackPackage = path.resolve(moduleDir, "..", "..", "package.json");
   const pkg =
     (await safeReadJson<{ version?: string }>(cwdPackage)) ??
     (await safeReadJson<{ version?: string }>(fallbackPackage));

@@ -27,6 +27,6 @@ export default defineConfig({
         functions: 80,
       },
     },
-    exclude: ["e2e/**", "node_modules/**", "dist/**"],
+    exclude: ["e2e/**", "node_modules/**", "dist/**", "tests/golden/**"],
   },
 });

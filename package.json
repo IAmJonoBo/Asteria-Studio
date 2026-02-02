@@ -9,7 +9,10 @@
   "scripts": {
     "lint": "pnpm -C apps/asteria-desktop lint",
     "test": "pnpm -C apps/asteria-desktop test",
-    "build": "pnpm -C apps/asteria-desktop build"
+    "build": "pnpm -C apps/asteria-desktop build",
+    "golden:generate": "pnpm -C apps/asteria-desktop golden:generate",
+    "golden:bless": "pnpm -C apps/asteria-desktop golden:bless",
+    "golden:test": "pnpm -C apps/asteria-desktop golden:test"
   },
   "packageManager": "pnpm@10.28.2",
   "devDependencies": {

@@ -80,13 +80,17 @@ const createAbortController = (): AbortControllerLike => {
   };
   return {
     signal,
-    abort: () => {
+    abort: (): void => {
       aborted = true;
     },
   };
 };
 
-const updateRunManifestStatus = async (runDir: string, runId: string, status: RunIndexStatus) => {
+const updateRunManifestStatus = async (
+  runDir: string,
+  runId: string,
+  status: RunIndexStatus
+): Promise<void> => {
   const manifestPath = getRunManifestPath(runDir);
   try {
     const raw = await fs.readFile(manifestPath, "utf-8");
@@ -115,7 +119,7 @@ export const startRun = async (
   config: PipelineRunConfig,
   projectRoot: string,
   outputDir: string
-) => {
+): Promise<string> => {
   const runId = `run-${Date.now()}`;
   const controller = createAbortController();
   const pauseController = createPauseController();

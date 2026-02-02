@@ -66,14 +66,14 @@ export function App(): JSX.Element {
     void loadProjects();
   }, []);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const windowRef: typeof globalThis & {
       asteria?: {
         onRunProgress?: (handler: (event: { runId: string; stage: string }) => void) => () => void;
       };
     } = globalThis;
     if (!windowRef.asteria?.onRunProgress) return;
-    const unsubscribe = windowRef.asteria.onRunProgress((event) => {
+    const unsubscribe = windowRef.asteria.onRunProgress((event): void => {
       if (event.stage === "complete") {
         setSelectedRunId(event.runId);
         setActiveScreen("runs");

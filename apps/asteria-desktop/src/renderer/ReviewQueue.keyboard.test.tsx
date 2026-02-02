@@ -5,7 +5,14 @@ import { ReviewQueueScreen } from "./screens/ReviewQueueScreen";
 
 describe("ReviewQueueScreen - Keyboard Navigation", () => {
   type AsteriaApi = { ipc: Record<string, unknown> };
-  const buildQueue = (items: Array<Record<string, unknown>>) => ({
+  const buildQueue = (
+    items: Array<Record<string, unknown>>
+  ): {
+    runId: string;
+    projectId: string;
+    generatedAt: string;
+    items: Array<Record<string, unknown>>;
+  } => ({
     runId: "run-1",
     projectId: "proj",
     generatedAt: "2026-01-01",

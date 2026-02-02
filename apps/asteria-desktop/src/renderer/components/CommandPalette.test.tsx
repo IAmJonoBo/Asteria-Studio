@@ -47,4 +47,30 @@ describe("CommandPalette", () => {
 
     expect(screen.getByText(/no commands found/i)).toBeInTheDocument();
   });
+
+  it("supports keyboard navigation and execution", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const commands = [
+      { ...baseCommands[0], action: vi.fn() },
+      { ...baseCommands[1], action: vi.fn() },
+    ];
+
+    render(<CommandPalette isOpen onClose={onClose} commands={commands} />);
+
+    const first = screen.getByRole("button", { name: /go to projects/i });
+    const second = screen.getByRole("button", { name: /start new run/i });
+
+    expect(first).toHaveAttribute("aria-current", "true");
+
+    await user.keyboard("{ArrowDown}");
+    expect(second).toHaveAttribute("aria-current", "true");
+
+    await user.keyboard("{Enter}");
+    expect(commands[1].action).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    await user.keyboard("{ArrowUp}");
+    expect(first).toHaveAttribute("aria-current", "true");
+  });
 });

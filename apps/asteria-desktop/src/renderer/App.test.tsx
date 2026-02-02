@@ -152,10 +152,12 @@ describe("App", () => {
       ],
     });
 
-    const onRunProgress = vi.fn((handler: (event: { runId: string; stage: string }) => void) => {
-      handler({ runId: "run-123", stage: "complete" });
-      return () => {};
-    });
+    const onRunProgress = vi.fn(
+      (handler: (event: { runId: string; stage: string }) => void): (() => void) => {
+        handler({ runId: "run-123", stage: "complete" });
+        return () => {};
+      }
+    );
     windowRef.asteria = {
       ipc: {
         "asteria:list-projects": vi.fn().mockResolvedValue([]),
@@ -347,10 +349,12 @@ describe("App", () => {
     };
     const previousAsteria = windowRef.asteria;
     const listRuns = vi.fn().mockResolvedValue([]);
-    const onRunProgress = vi.fn((handler: (event: { runId: string; stage: string }) => void) => {
-      handler({ runId: "run-99", stage: "complete" });
-      return () => {};
-    });
+    const onRunProgress = vi.fn(
+      (handler: (event: { runId: string; stage: string }) => void): (() => void) => {
+        handler({ runId: "run-99", stage: "complete" });
+        return () => {};
+      }
+    );
 
     windowRef.asteria = {
       ipc: {

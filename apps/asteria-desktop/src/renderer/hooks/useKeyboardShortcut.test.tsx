@@ -10,13 +10,13 @@ function ShortcutHarness(): JSX.Element {
   useKeyboardShortcuts([
     {
       key: "a",
-      handler: () => setLog((prev) => [...prev, "a"]),
+      handler: (): void => setLog((prev) => [...prev, "a"]),
       description: "A",
     },
     {
       key: "b",
       ctrlKey: true,
-      handler: () => setLog((prev) => [...prev, "b"]),
+      handler: (): void => setLog((prev) => [...prev, "b"]),
       description: "B",
     },
   ]);
