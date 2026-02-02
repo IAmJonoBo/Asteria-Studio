@@ -27,7 +27,9 @@ export function useTheme(): [Theme, (theme: Theme) => void] {
     };
 
     mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
+    return (): void => {
+      mediaQuery.removeEventListener("change", handler);
+    };
   }, []);
 
   return [theme, setTheme];

@@ -113,7 +113,7 @@ describe("ReviewQueueScreen - Keyboard Navigation", () => {
       constructor(callback: () => void) {
         this.callback = callback;
       }
-      observe() {
+      observe(): void {
         this.callback();
       }
       disconnect = vi.fn();

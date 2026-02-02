@@ -170,7 +170,7 @@ class MockSharp {
 }
 
 vi.mock("sharp", () => ({
-  default: (input: unknown, options?: { raw?: { width: number; height: number } }) =>
+  default: (input: unknown, options?: { raw?: { width: number; height: number } }): MockSharp =>
     new MockSharp(input, options),
 }));
 

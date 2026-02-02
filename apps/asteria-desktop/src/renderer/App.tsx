@@ -16,7 +16,7 @@ export function App(): JSX.Element {
   useKeyboardShortcut({
     key: "k",
     ctrlKey: true,
-    handler: () => setCommandPaletteOpen(true),
+    handler: (): void => setCommandPaletteOpen(true),
     description: "Open command palette",
   });
 
@@ -27,7 +27,7 @@ export function App(): JSX.Element {
     useKeyboardShortcut({
       key,
       ctrlKey: true,
-      handler: () => setActiveScreen(screens[index]),
+      handler: (): void => setActiveScreen(screens[index]),
       description: `Navigate to ${screens[index]}`,
     });
   });
@@ -42,54 +42,60 @@ export function App(): JSX.Element {
     // Placeholder: wire IPC to open project.
   };
 
-  const commands = [
+  const commands: Array<{
+    id: string;
+    label: string;
+    category: string;
+    shortcut?: string;
+    action: () => void;
+  }> = [
     {
       id: "nav-projects",
       label: "Go to Projects",
       category: "Navigation",
       shortcut: "Ctrl+1",
-      action: () => setActiveScreen("projects"),
+      action: (): void => setActiveScreen("projects"),
     },
     {
       id: "nav-runs",
       label: "Go to Run History",
       category: "Navigation",
       shortcut: "Ctrl+2",
-      action: () => setActiveScreen("runs"),
+      action: (): void => setActiveScreen("runs"),
     },
     {
       id: "nav-monitor",
       label: "Go to Live Monitor",
       category: "Navigation",
       shortcut: "Ctrl+3",
-      action: () => setActiveScreen("monitor"),
+      action: (): void => setActiveScreen("monitor"),
     },
     {
       id: "nav-review",
       label: "Go to Review Queue",
       category: "Navigation",
       shortcut: "Ctrl+4",
-      action: () => setActiveScreen("review"),
+      action: (): void => setActiveScreen("review"),
     },
     {
       id: "nav-exports",
       label: "Go to Exports",
       category: "Navigation",
       shortcut: "Ctrl+5",
-      action: () => setActiveScreen("exports"),
+      action: (): void => setActiveScreen("exports"),
     },
     {
       id: "nav-settings",
       label: "Go to Settings",
       category: "Navigation",
       shortcut: "Ctrl+6",
-      action: () => setActiveScreen("settings"),
+      action: (): void => setActiveScreen("settings"),
     },
     {
       id: "toggle-theme",
       label: "Toggle Theme",
       category: "Preferences",
-      action: () => setTheme(theme === "light" ? "dark" : "light"),
+      action: (): void => setTheme(theme === "light" ? "dark" : "light"),
     },
     {
       id: "import-corpus",

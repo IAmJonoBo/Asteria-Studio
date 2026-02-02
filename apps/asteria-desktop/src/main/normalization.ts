@@ -95,6 +95,13 @@ interface ShadingModel {
   applied: boolean;
 }
 
+type ShadingEstimate = {
+  shadow: ShadowDetection;
+  spineShadowScore: number;
+  confidence: number;
+  field: { data: Float32Array; width: number; height: number; mean: number; std: number };
+};
+
 export interface NormalizationPriors {
   targetAspectRatio: number;
   medianBleedPx: number;
@@ -524,7 +531,10 @@ const buildLowFrequencyField = (
   return { data: field, width: fieldWidth, height: fieldHeight, mean, std: Math.sqrt(variance) };
 };
 
-const estimateShadingModel = (preview: PreviewImage, border: { mean: number; std: number }) => {
+const estimateShadingModel = (
+  preview: PreviewImage,
+  border: { mean: number; std: number }
+): ShadingEstimate => {
   const shadow = detectShadows(preview);
   const strip = Math.max(4, Math.round(preview.width * 0.05));
   const leftStrip = { x0: 0, x1: strip };
@@ -1150,7 +1160,16 @@ export async function normalizePage(
   );
   const shadingModel = shadingResult?.model;
   const shadingCorrected = shadingResult?.corrected ?? rotated;
-  const computeBoxes = (bias: number, edgeScale: number) => {
+  const computeBoxes = (
+    bias: number,
+    edgeScale: number
+  ): {
+    intensityThreshold: number;
+    intensityMask: ReturnType<typeof computeMaskBox>;
+    edgeThreshold: number;
+    edgeBox: ReturnType<typeof computeEdgeBox>;
+    combinedBox: ReturnType<typeof unionBox>;
+  } => {
     const intensityThreshold = Math.max(
       0,
       Math.min(borderStats.mean - borderStats.std * (0.25 + bias), borderStats.mean - 3)

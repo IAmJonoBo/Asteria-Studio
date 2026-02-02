@@ -1,23 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { PipelineRunConfig, PageData } from "../ipc/contracts";
+import type { NormalizationResult } from "./normalization";
 
 const scanCorpus = vi.hoisted(() => vi.fn());
 const analyzeCorpus = vi.hoisted(() => vi.fn());
 const normalizePage = vi.hoisted(() => vi.fn());
 
-vi.mock("../ipc/corpusScanner", () => ({ scanCorpus }));
-vi.mock("../ipc/corpusAnalysis", () => ({
-  analyzeCorpus,
-  computeTargetDimensionsPx: (dims: { width: number; height: number }, dpi: number) => ({
-    width: Math.round((dims.width / 25.4) * dpi),
-    height: Math.round((dims.height / 25.4) * dpi),
-  }),
-}));
-vi.mock("./normalization.ts", () => ({ normalizePage }));
-vi.mock("./normalization", () => ({ normalizePage }));
-vi.mock("./normalization.js", () => ({ normalizePage }));
+vi.mock("../ipc/corpusScanner", (): { scanCorpus: typeof scanCorpus } => ({ scanCorpus }));
+vi.mock(
+  "../ipc/corpusAnalysis",
+  (): {
+    analyzeCorpus: typeof analyzeCorpus;
+    computeTargetDimensionsPx: (
+      dims: { width: number; height: number },
+      dpi: number
+    ) => {
+      width: number;
+      height: number;
+    };
+  } => ({
+    analyzeCorpus,
+    computeTargetDimensionsPx: (
+      dims: { width: number; height: number },
+      dpi: number
+    ): { width: number; height: number } => ({
+      width: Math.round((dims.width / 25.4) * dpi),
+      height: Math.round((dims.height / 25.4) * dpi),
+    }),
+  })
+);
+vi.mock("./normalization.ts", (): { normalizePage: typeof normalizePage } => ({ normalizePage }));
+vi.mock("./normalization", (): { normalizePage: typeof normalizePage } => ({ normalizePage }));
+vi.mock("./normalization.js", (): { normalizePage: typeof normalizePage } => ({ normalizePage }));
 
-const loadRunPipeline = async () => {
+const loadRunPipeline = async (): Promise<typeof import("./pipeline-runner").runPipeline> => {
   const mod = await import("./pipeline-runner");
   return mod.runPipeline;
 };
@@ -29,7 +45,7 @@ const buildConfig = (pages: PageData[]): PipelineRunConfig => ({
   targetDimensionsMm: { width: 210, height: 297 },
 });
 
-const buildNormalized = (page: PageData) => ({
+const buildNormalized = (page: PageData): NormalizationResult => ({
   pageId: page.id,
   normalizedPath: "/tmp/normalized.png",
   cropBox: [0, 0, 100, 100] as [number, number, number, number],
