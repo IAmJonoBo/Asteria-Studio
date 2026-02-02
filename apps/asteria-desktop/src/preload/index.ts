@@ -96,12 +96,14 @@ const api: IpcChannels = {
     return safeInvoke("asteria:fetch-sidecar", runId, pageId);
   },
   "asteria:apply-override": async (
-    pageId: Parameters<IpcChannels["asteria:apply-override"]>[0],
-    overrides: Parameters<IpcChannels["asteria:apply-override"]>[1]
+    runId: Parameters<IpcChannels["asteria:apply-override"]>[0],
+    pageId: Parameters<IpcChannels["asteria:apply-override"]>[1],
+    overrides: Parameters<IpcChannels["asteria:apply-override"]>[2]
   ) => {
+    validateRunId(runId);
     validatePageId(pageId);
     validateOverrides(overrides);
-    return safeInvoke("asteria:apply-override", pageId, overrides);
+    return safeInvoke("asteria:apply-override", runId, pageId, overrides);
   },
   "asteria:export-run": async (
     runId: Parameters<IpcChannels["asteria:export-run"]>[0],

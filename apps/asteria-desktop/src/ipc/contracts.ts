@@ -138,7 +138,7 @@ export interface RunSummary {
   projectId: string;
   generatedAt: string;
   reviewCount: number;
-  status?: "queued" | "running" | "paused" | "cancelled" | "error" | "success";
+  status?: "queued" | "running" | "paused" | "cancelling" | "cancelled" | "error" | "success";
   startedAt?: string;
   updatedAt?: string;
   reportPath?: string;
@@ -388,7 +388,11 @@ export interface IpcChannels {
   "asteria:resume-run": (_runId: string) => Promise<void>;
   "asteria:fetch-page": (_runId: string, _pageId: string) => Promise<PageData>;
   "asteria:fetch-sidecar": (_runId: string, _pageId: string) => Promise<PageLayoutSidecar | null>;
-  "asteria:apply-override": (_pageId: string, _overrides: Record<string, unknown>) => Promise<void>;
+  "asteria:apply-override": (
+    _runId: string,
+    _pageId: string,
+    _overrides: Record<string, unknown>
+  ) => Promise<void>;
   "asteria:export-run": (
     _runId: string,
     _formats: Array<"png" | "tiff" | "pdf">
