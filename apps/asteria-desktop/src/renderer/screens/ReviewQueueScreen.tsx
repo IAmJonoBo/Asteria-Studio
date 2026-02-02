@@ -1,4 +1,4 @@
-import type { JSX, KeyboardEvent, MouseEvent, WheelEvent } from "react";
+import type { JSX, KeyboardEvent, MouseEvent, WheelEvent, MutableRefObject } from "react";
 import { useState, useEffect, useRef } from "react";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcut";
 import type { ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts";
@@ -451,7 +451,14 @@ const useQueueSelection = (
   return { selectedIndex: clampedIndex, setSelectedIndex };
 };
 
-const useQueueViewport = (selectedIndex: number) => {
+const useQueueViewport = (
+  selectedIndex: number
+): {
+  listRef: MutableRefObject<globalThis.HTMLDivElement | null>;
+  scrollTop: number;
+  setScrollTop: SetState<number>;
+  viewportHeight: number;
+} => {
   const listRef = useRef<globalThis.HTMLDivElement | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
@@ -487,7 +494,10 @@ const useQueueViewport = (selectedIndex: number) => {
   return { listRef, scrollTop, setScrollTop, viewportHeight };
 };
 
-const useSidecarData = (runId: string | undefined, currentPage: ReviewPage | undefined) => {
+const useSidecarData = (
+  runId: string | undefined,
+  currentPage: ReviewPage | undefined
+): { sidecar: PageLayoutSidecar | null; sidecarError: string | null } => {
   const [sidecar, setSidecar] = useState<PageLayoutSidecar | null>(null);
   const [sidecarError, setSidecarError] = useState<string | null>(null);
 

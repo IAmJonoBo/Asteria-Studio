@@ -1,0 +1,28 @@
+{
+  "pageId": "p03_running_head_folio",
+  "pageBoundsPx": [
+    0,
+    0,
+    2174,
+    3074
+  ],
+  "contentBoxPx": [
+    140,
+    280,
+    2035,
+    2815
+  ],
+  "gutter": {
+    "side": "none",
+    "widthPx": 0
+  },
+  "baselineGrid": {
+    "medianSpacingPx": 18.71
+  },
+  "ornaments": [],
+  "shouldSplit": false,
+  "expectedReviewReasons": [
+    "low-shading-confidence",
+    "residual-skew-*"
+  ]
+}

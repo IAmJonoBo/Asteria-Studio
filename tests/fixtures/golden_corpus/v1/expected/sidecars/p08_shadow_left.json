@@ -1,0 +1,207 @@
+{
+  "version": "1.0.0",
+  "pageId": "p08_shadow_left",
+  "source": {
+    "path": "/Users/jonathanbotha/GitHub/Asteria-Studio/tests/fixtures/golden_corpus/v1/inputs/p08_shadow_left.png",
+    "checksum": "f011d726ba069933ba7d3d605e9dccfdd58ff79edcf4e9c5d14949f3ec730b02"
+  },
+  "dimensions": {
+    "width": 767.2916666666666,
+    "height": 1084.7916666666667,
+    "unit": "mm"
+  },
+  "dpi": 72,
+  "normalization": {
+    "cropBox": [
+      0,
+      0,
+      2174,
+      3074
+    ],
+    "pageMask": [
+      5,
+      6,
+      2169,
+      3072
+    ],
+    "dpiSource": "metadata",
+    "bleed": 12.499975,
+    "trim": 0,
+    "scale": 0.7402995234853642,
+    "skewAngle": -16,
+    "warp": {
+      "method": "affine",
+      "residual": 0
+    },
+    "shadow": {
+      "present": false,
+      "side": "none",
+      "widthPx": 0,
+      "confidence": -0.44312027159583944,
+      "darkness": -76.41807782866294
+    },
+    "shading": {
+      "method": "border-regression",
+      "backgroundModel": "lowpass-field",
+      "spineShadowModel": "edge-aware-band",
+      "params": {
+        "fieldWidth": 96,
+        "fieldHeight": 96
+      },
+      "confidence": 0.04693114264629342
+    }
+  },
+  "elements": [
+    {
+      "id": "p08_shadow_left-page-bounds",
+      "type": "page_bounds",
+      "bbox": [
+        0,
+        0,
+        2174,
+        3074
+      ],
+      "confidence": 0.6,
+      "source": "local",
+      "flags": [
+        "derived"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-text-block",
+      "type": "text_block",
+      "bbox": [
+        5,
+        6,
+        2169,
+        3072
+      ],
+      "confidence": 0.55,
+      "source": "local",
+      "flags": [
+        "mask-derived"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-title",
+      "type": "title",
+      "bbox": [
+        265,
+        67,
+        1909,
+        435
+      ],
+      "confidence": 0.28,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-running-head",
+      "type": "running_head",
+      "bbox": [
+        221,
+        6,
+        1953,
+        251
+      ],
+      "confidence": 0.25,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-folio",
+      "type": "folio",
+      "bbox": [
+        914,
+        2765,
+        1260,
+        3011
+      ],
+      "confidence": 0.22,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-ornament",
+      "type": "ornament",
+      "bbox": [
+        914,
+        558,
+        1260,
+        742
+      ],
+      "confidence": 0.2,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-drop-cap",
+      "type": "drop_cap",
+      "bbox": [
+        48,
+        558,
+        221,
+        987
+      ],
+      "confidence": 0.18,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-footnote",
+      "type": "footnote",
+      "bbox": [
+        113,
+        2643,
+        2061,
+        3011
+      ],
+      "confidence": 0.2,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    },
+    {
+      "id": "p08_shadow_left-marginalia",
+      "type": "marginalia",
+      "bbox": [
+        5,
+        773,
+        178,
+        2306
+      ],
+      "confidence": 0.18,
+      "source": "local",
+      "flags": [
+        "heuristic"
+      ]
+    }
+  ],
+  "metrics": {
+    "processingMs": 0,
+    "deskewConfidence": 1,
+    "shadowScore": -76.41807782866294,
+    "maskCoverage": 1,
+    "backgroundStd": 16.389766510534486,
+    "backgroundMean": 251.38610078649947,
+    "illuminationResidual": 0.9072905097058528,
+    "spineShadowScore": 0,
+    "layoutScore": 0.9632807563378243,
+    "baseline": {
+      "medianSpacingPx": 21.160714285714285,
+      "lineStraightnessResidual": 8,
+      "confidence": 0.7472022101919118
+    }
+  }
+}

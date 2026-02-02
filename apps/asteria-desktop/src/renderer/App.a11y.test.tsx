@@ -38,7 +38,9 @@ describe("App - Navigation & Accessibility", () => {
     const previousAsteria = windowRef.asteria;
     windowRef.asteria = {
       ipc: {
-        "asteria:list-projects": async () => [
+        "asteria:list-projects": async (): Promise<
+          Array<{ id: string; name: string; path: string; inputPath: string; status: string }>
+        > => [
           {
             id: "mind-myth-magick",
             name: "Mind, Myth and Magick",

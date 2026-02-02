@@ -1,0 +1,28 @@
+{
+  "pageId": "p09_shadow_right",
+  "pageBoundsPx": [
+    0,
+    0,
+    2174,
+    3074
+  ],
+  "contentBoxPx": [
+    140,
+    180,
+    2035,
+    2935
+  ],
+  "gutter": {
+    "side": "right",
+    "widthPx": 140
+  },
+  "baselineGrid": {
+    "medianSpacingPx": 25.58
+  },
+  "ornaments": [],
+  "shouldSplit": false,
+  "expectedReviewReasons": [
+    "low-shading-confidence",
+    "residual-skew-*"
+  ]
+}

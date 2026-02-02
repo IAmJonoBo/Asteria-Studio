@@ -21,8 +21,10 @@ apps/asteria-desktop/node_modules/
 apps/asteria-desktop/pipeline-results/
 apps/asteria-desktop/playwright-report/
 apps/asteria-desktop/test-results/
+apps/asteria-desktop/.cache/golden/
 packages/ui-kit/dist/
 packages/ui-kit/node_modules/
+packages/pipeline-core/target/
 
 # Local env
 .env
@@ -32,3 +34,6 @@ packages/ui-kit/node_modules/
 projects/mind-myth-and-magick/output/
 projects/mind-myth-and-magick/work/
 projects/mind-myth-and-magick/input/**/Pages/
+
+# Golden corpus artifacts
+.golden-artifacts/

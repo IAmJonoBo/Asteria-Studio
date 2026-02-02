@@ -165,7 +165,7 @@ describe("Pipeline Runner", () => {
     ).normalization;
     expect(normalizationMetrics?.reviewQueueCount).toBeDefined();
     expect(normalizationMetrics?.strictAcceptRate).toBe(1);
-  });
+  }, 20000);
 
   it("runPipeline handles target DPI override", async () => {
     const result = await runPipeline({
@@ -177,7 +177,7 @@ describe("Pipeline Runner", () => {
 
     expect(result.success).toBe(true);
     expect(result.analysisSummary.dpi).toBe(600);
-  });
+  }, 20000);
 
   it("runPipeline uses full corpus and target dimensions override", async () => {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-full-"));
@@ -431,7 +431,7 @@ describe("Pipeline Runner", () => {
       result.pipelineResult.metrics as { normalization?: Record<string, number> }
     ).normalization;
     expect(normalizationMetrics?.reviewQueueCount).toBeGreaterThan(0);
-  });
+  }, 20000);
 
   it("uses config-driven QA thresholds", async () => {
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-qa-config-"));

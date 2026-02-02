@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { RunProgressEvent } from "../../ipc/contracts";
 import { ExportsScreen, MonitorScreen, RunsScreen, SettingsScreen } from "./PlaceholderScreens";
 
-const resetAsteria = () => {
+const resetAsteria = (): void => {
   delete (globalThis as typeof globalThis & { asteria?: unknown }).asteria;
 };
 
@@ -93,7 +93,7 @@ describe("PlaceholderScreens", () => {
     const unsubscribe = vi.fn();
 
     (globalThis as typeof globalThis & { asteria?: unknown }).asteria = {
-      onRunProgress: (cb: (event: RunProgressEvent) => void) => {
+      onRunProgress: (cb: (event: RunProgressEvent) => void): (() => void) => {
         handler = cb;
         return unsubscribe;
       },

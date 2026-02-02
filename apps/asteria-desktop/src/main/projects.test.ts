@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import path from "node:path";
 
+type MockStat = {
+  isDirectory?: () => boolean;
+  isFile?: () => boolean;
+};
+
 const readdir = vi.hoisted(() => vi.fn());
 const stat = vi.hoisted(() => vi.fn());
 const readFile = vi.hoisted(() => vi.fn());
@@ -45,7 +50,7 @@ describe("projects", () => {
       JSON.stringify({ id: "alpha", name: "Alpha Project", inputPath: "input/raw" })
     );
 
-    stat.mockImplementation(async (target: string) => {
+    stat.mockImplementation(async (target: string): Promise<MockStat> => {
       if (target === projectDir) {
         return { isDirectory: () => true };
       }
@@ -80,7 +85,7 @@ describe("projects", () => {
     readRunIndex.mockResolvedValueOnce([]);
     readFile.mockRejectedValueOnce(new Error("missing"));
 
-    stat.mockImplementation(async (target: string) => {
+    stat.mockImplementation(async (target: string): Promise<MockStat> => {
       if (target === projectDir) {
         return { isDirectory: () => true };
       }
@@ -113,7 +118,7 @@ describe("projects", () => {
 
     const existingDirs = new Set([existingDir]);
 
-    stat.mockImplementation(async (target: string) => {
+    stat.mockImplementation(async (target: string): Promise<MockStat> => {
       if (target === inputPath) {
         return { isDirectory: () => true };
       }
@@ -155,7 +160,7 @@ describe("projects", () => {
       )
       .mockRejectedValueOnce(new Error("missing"));
 
-    stat.mockImplementation(async (target: string) => {
+    stat.mockImplementation(async (target: string): Promise<MockStat> => {
       if (target === alphaDir || target === betaDir) {
         return { isDirectory: () => true };
       }

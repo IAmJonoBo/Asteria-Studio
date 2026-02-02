@@ -54,4 +54,36 @@ describe("requestRemoteLayout", () => {
     expect(result?.[0].type).toBe("title");
     expect(result?.[0].source).toBe("remote");
   });
+
+  it("returns null when config file cannot be read", async () => {
+    process.env.ASTERIA_REMOTE_LAYOUT_ENDPOINT = "";
+    process.env.ASTERIA_REMOTE_LAYOUT_TOKEN = "";
+    process.env.ASTERIA_REMOTE_LAYOUT_TIMEOUT_MS = "";
+
+    const statSpy = vi
+      .spyOn(fs, "stat")
+      .mockResolvedValue({ isFile: () => true } as unknown as Awaited<ReturnType<typeof fs.stat>>);
+    const readSpy = vi.spyOn(fs, "readFile").mockRejectedValue(new Error("boom"));
+
+    const imagePath = await createTempImage();
+    const result = await requestRemoteLayout("page-003", imagePath, 800, 1000);
+    expect(result).toBeNull();
+
+    statSpy.mockRestore();
+    readSpy.mockRestore();
+  });
+
+  it("returns null when no config file is found", async () => {
+    process.env.ASTERIA_REMOTE_LAYOUT_ENDPOINT = "";
+    process.env.ASTERIA_REMOTE_LAYOUT_TOKEN = "";
+    process.env.ASTERIA_REMOTE_LAYOUT_TIMEOUT_MS = "";
+
+    const statSpy = vi.spyOn(fs, "stat").mockRejectedValue(new Error("missing"));
+
+    const imagePath = await createTempImage();
+    const result = await requestRemoteLayout("page-004", imagePath, 800, 1000);
+    expect(result).toBeNull();
+
+    statSpy.mockRestore();
+  });
 });

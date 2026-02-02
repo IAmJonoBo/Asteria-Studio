@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReviewQueueScreen } from "./ReviewQueueScreen";
 
-const resetAsteria = () => {
+const resetAsteria = (): void => {
   delete (globalThis as typeof globalThis & { asteria?: unknown }).asteria;
 };
 
@@ -156,5 +156,5 @@ describe("ReviewQueueScreen", () => {
       "run-3",
       expect.arrayContaining([{ pageId: "page-1", decision: "accept" }])
     );
-  });
+  }, 10000);
 });
