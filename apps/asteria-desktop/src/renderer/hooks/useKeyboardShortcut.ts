@@ -59,12 +59,14 @@ export function useKeyboardShortcut(shortcut: KeyboardShortcut): void {
     const target = globalThis as EventTargetLike;
     if (!target.addEventListener) return;
     target.addEventListener("keydown", handler);
-    return () => target.removeEventListener?.("keydown", handler);
+    return (): void => {
+      target.removeEventListener?.("keydown", handler);
+    };
   }, [shortcut.disabled]);
 }
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]): void {
-  shortcuts.forEach((shortcut) => {
+  shortcuts.forEach((shortcut): void => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useKeyboardShortcut(shortcut);
   });

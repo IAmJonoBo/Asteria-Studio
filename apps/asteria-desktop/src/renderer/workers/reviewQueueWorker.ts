@@ -20,7 +20,7 @@ const workerScope = globalThis as unknown as {
   postMessage: (message: WorkerResponse) => void;
 };
 
-workerScope.onmessage = (event) => {
+workerScope.onmessage = (event: { data: WorkerRequest }): void => {
   const pages = event.data.pages ?? [];
   const sorted = [...pages].sort((a, b) => a.confidence - b.confidence);
   const response: WorkerResponse = { pages: sorted };

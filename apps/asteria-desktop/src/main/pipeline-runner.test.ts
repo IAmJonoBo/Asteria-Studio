@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { PipelineRunnerResult } from "./pipeline-runner.ts";
+import type { NormalizationResult } from "./normalization";
 import type { PageData } from "../ipc/contracts.ts";
 import { runPipeline, evaluateResults } from "./pipeline-runner.ts";
 import fs from "node:fs/promises";
@@ -7,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 
-const buildMockNormalization = (page: PageData) => {
+const buildMockNormalization = (page: PageData): NormalizationResult => {
   const id = page.id;
   const isBlank = id.includes("blank");
   const isVeryLowMask = id.includes("very-low");

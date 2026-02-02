@@ -1,29 +1,30 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Asteria Desktop App", () => {
-  test("app opens and renders headline", async ({ page }) => {
+  test("app opens and shows navigation", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
 
-    // Verify hero headline
-    const headline = page.getByRole("heading", { name: /enterprise page normalization/i });
-    await expect(headline).toBeVisible();
+    const nav = page.getByRole("navigation", { name: /main navigation/i });
+    await expect(nav).toBeVisible();
+    await expect(nav.getByRole("button", { name: /projects/i }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /projects/i }).first()).toBeVisible();
   });
 
-  test("pipeline highlights section is visible", async ({ page }) => {
+  test("command palette opens with keyboard", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
 
-    const section = page.getByRole("heading", { name: /pipeline highlights/i });
-    await expect(section).toBeVisible();
-
-    // Check that at least one highlight item is visible
-    const items = page.locator("li");
-    await expect(items.first()).toContainText(/deskew|dewarp|detect/i);
+    await page.keyboard.press("Control+K");
+    await expect(page.getByRole("dialog", { name: /command palette/i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /command search/i })).toBeVisible();
   });
 
-  test("next-up section offers context", async ({ page }) => {
+  test("review queue screen is reachable", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
 
-    const nextUp = page.getByText(/Hook up IPC to the orchestrator/i);
-    await expect(nextUp).toBeVisible();
+    await page
+      .getByRole("button", { name: /review queue/i })
+      .first()
+      .click();
+    await expect(page.getByRole("heading", { name: /no pages need review/i })).toBeVisible();
   });
 });

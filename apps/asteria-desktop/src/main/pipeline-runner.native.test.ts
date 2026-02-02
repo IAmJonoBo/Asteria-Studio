@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import type { PageData } from "../ipc/contracts";
+import type { NormalizationResult } from "./normalization";
 
 const mockNative = {
   processPageStub: vi.fn(() => "ok"),
@@ -21,7 +22,7 @@ const mockNative = {
 
 let normalizedPath = "";
 
-const buildNormalization = (page: PageData) => ({
+const buildNormalization = (page: PageData): NormalizationResult => ({
   pageId: page.id,
   normalizedPath,
   cropBox: [0, 0, 100, 100] as [number, number, number, number],
@@ -43,38 +44,48 @@ const buildNormalization = (page: PageData) => ({
     spineShadowScore: 0,
   },
   corrections: {
-    baseline: { textLineCount: 12, residualAngle: 0.1 },
+    deskewAngle: 0.1,
+    baseline: { lineConsistency: 0.8, textLineCount: 12, residualAngle: 0.1 },
   },
 });
 
-vi.mock("./pipeline-core-native.ts", () => ({
-  getPipelineCoreNative: () => mockNative,
+vi.mock("./pipeline-core-native.ts", (): { getPipelineCoreNative: () => typeof mockNative } => ({
+  getPipelineCoreNative: (): typeof mockNative => mockNative,
 }));
 
-vi.mock("./remote-inference.ts", () => ({
-  requestRemoteLayout: vi.fn(async () => null),
+vi.mock("./remote-inference.ts", (): { requestRemoteLayout: ReturnType<typeof vi.fn> } => ({
+  requestRemoteLayout: vi.fn(async (): Promise<null> => null),
 }));
 
-vi.mock("./normalization.ts", () => ({
-  normalizePages: vi.fn(
-    async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
-  ),
-  normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
-}));
+vi.mock(
+  "./normalization.ts",
+  (): { normalizePages: ReturnType<typeof vi.fn>; normalizePage: ReturnType<typeof vi.fn> } => ({
+    normalizePages: vi.fn(
+      async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
+    ),
+    normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
+  })
+);
 
-vi.mock("./normalization", () => ({
-  normalizePages: vi.fn(
-    async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
-  ),
-  normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
-}));
+vi.mock(
+  "./normalization",
+  (): { normalizePages: ReturnType<typeof vi.fn>; normalizePage: ReturnType<typeof vi.fn> } => ({
+    normalizePages: vi.fn(
+      async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
+    ),
+    normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
+  })
+);
 
-vi.mock("./normalization.js", () => ({
-  normalizePages: vi.fn(
-    async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
-  ),
-  normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
-}));
+vi.mock(
+  "./normalization.js",
+  (): { normalizePages: ReturnType<typeof vi.fn>; normalizePage: ReturnType<typeof vi.fn> } => ({
+    normalizePages: vi.fn(
+      async (pages: PageData[]) => new Map(pages.map((page) => [page.id, buildNormalization(page)]))
+    ),
+    normalizePage: vi.fn(async (page: PageData) => buildNormalization(page)),
+  })
+);
 
 import { runPipeline } from "./pipeline-runner";
 

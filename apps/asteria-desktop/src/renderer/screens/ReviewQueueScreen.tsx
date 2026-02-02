@@ -71,7 +71,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
   const ITEM_HEIGHT = 86;
   const OVERSCAN = 6;
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     let cancelled = false;
     const loadQueue = async (): Promise<void> => {
       const windowRef: typeof globalThis & {
@@ -95,7 +95,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     };
   }, [runId]);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const WorkerCtor = globalThis.Worker;
     if (!WorkerCtor) {
       return;
@@ -108,11 +108,11 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       type: "module",
     });
     const reviewWorker: ReviewWorker = {
-      postMessage: (message) => worker.postMessage(message),
-      terminate: () => worker.terminate(),
+      postMessage: (message): void => worker.postMessage(message),
+      terminate: (): void => worker.terminate(),
       onmessage: null,
     };
-    worker.onmessage = (event) => {
+    worker.onmessage = (event: { data?: { pages?: ReviewPage[] } }): void => {
       setQueuePages(event.data?.pages ?? []);
       reviewWorker.onmessage?.(event);
     };
@@ -123,13 +123,13 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     };
   }, []);
 
-  useEffect(() => {
+  useEffect((): void => {
     if (!workerRef.current) {
       setQueuePages(pages);
     }
   }, [pages]);
 
-  useEffect(() => {
+  useEffect((): void => {
     if (!workerRef.current) {
       setQueuePages(pages);
       return;
@@ -137,7 +137,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     workerRef.current.postMessage({ pages });
   }, [pages]);
 
-  useEffect(() => {
+  useEffect((): void => {
     if (queuePages.length === 0) {
       setSelectedIndex(0);
       return;
@@ -147,7 +147,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     }
   }, [queuePages, selectedIndex]);
 
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     const container = listRef.current;
     if (!container) return;
     const ResizeObserverCtor = globalThis.ResizeObserver;
@@ -155,15 +155,15 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       setViewportHeight(container.clientHeight);
       return;
     }
-    const resizeObserver = new ResizeObserverCtor(() => {
+    const resizeObserver = new ResizeObserverCtor((): void => {
       setViewportHeight(container.clientHeight);
     });
     resizeObserver.observe(container);
     setViewportHeight(container.clientHeight);
-    return () => resizeObserver.disconnect();
+    return (): void => resizeObserver.disconnect();
   }, []);
 
-  useEffect(() => {
+  useEffect((): void => {
     const container = listRef.current;
     if (!container) return;
     const top = selectedIndex * ITEM_HEIGHT;
@@ -247,12 +247,12 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
   useKeyboardShortcuts([
     {
       key: "j",
-      handler: () => setSelectedIndex(Math.min(selectedIndex + 1, queuePages.length - 1)),
+      handler: (): void => setSelectedIndex(Math.min(selectedIndex + 1, queuePages.length - 1)),
       description: "Next page",
     },
     {
       key: "k",
-      handler: () => setSelectedIndex(Math.max(selectedIndex - 1, 0)),
+      handler: (): void => setSelectedIndex(Math.max(selectedIndex - 1, 0)),
       description: "Previous page",
     },
     {
@@ -277,13 +277,15 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     },
     {
       key: " ",
-      handler: () => setOverlaysVisible(!overlaysVisible),
+      handler: (): void => setOverlaysVisible(!overlaysVisible),
       description: "Toggle overlays",
     },
     {
       key: "Enter",
       ctrlKey: true,
-      handler: () => void handleSubmitReview(),
+      handler: (): void => {
+        void handleSubmitReview();
+      },
       description: "Submit review decisions",
     },
   ]);

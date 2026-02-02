@@ -37,18 +37,27 @@ describe("useTheme", () => {
   it("uses system preference when no stored theme", async () => {
     type MediaEvent = { matches: boolean };
     let mediaListener: ((event: MediaEvent) => void) | null = null;
-    globalThis.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("dark"),
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: (_event: string, listener: (event: MediaEvent) => void) => {
-        mediaListener = listener;
-      },
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }));
+    globalThis.matchMedia = vi.fn().mockImplementation((query: string): MediaQueryList => {
+      const mock = {
+        matches: query.includes("dark"),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: (_event: string, listener: EventListenerOrEventListenerObject): void => {
+          if (typeof listener === "function") {
+            mediaListener = listener as unknown as (event: MediaEvent) => void;
+          } else if ("handleEvent" in listener) {
+            mediaListener = (event: MediaEvent): void => {
+              listener.handleEvent(event as unknown as Event);
+            };
+          }
+        },
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      };
+      return mock as MediaQueryList;
+    });
 
     render(<ThemeProbe />);
 
