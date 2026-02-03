@@ -23,6 +23,7 @@ import {
   validateOverrides,
   validatePageId,
   validatePipelineRunConfig,
+  validateReviewDecisions,
   validateRunId,
 } from "../ipc/validation.js";
 import { analyzeCorpus } from "../ipc/corpusAnalysis.js";
@@ -449,23 +450,25 @@ export function registerIpcHandlers(): void {
       const exportDir = path.join(runDir, "exports", timestamp);
       await fs.mkdir(exportDir, { recursive: true });
 
+      const warnings: string[] = [];
+
       const manifestPath = getRunManifestPath(runDir);
       const reportPath = getRunReportPath(runDir);
       const reviewQueuePath = getRunReviewQueuePath(runDir);
       try {
         await fs.copyFile(manifestPath, path.join(exportDir, "manifest.json"));
-      } catch {
-        // ignore missing manifest
+      } catch (err) {
+        warnings.push(`Failed to copy manifest: ${err}`);
       }
       try {
         await fs.copyFile(reportPath, path.join(exportDir, "report.json"));
-      } catch {
-        // ignore missing report
+      } catch (err) {
+        warnings.push(`Failed to copy report: ${err}`);
       }
       try {
         await fs.copyFile(reviewQueuePath, path.join(exportDir, "review-queue.json"));
-      } catch {
-        // ignore missing review queue
+      } catch (err) {
+        warnings.push(`Failed to copy review queue: ${err}`);
       }
 
       const sidecarDir = getSidecarDir(runDir);
@@ -475,34 +478,52 @@ export function registerIpcHandlers(): void {
         await fs.mkdir(sidecarExportDir, { recursive: true });
         await Promise.all(
           sidecarFiles.map((file) =>
-            fs.copyFile(path.join(sidecarDir, file), path.join(sidecarExportDir, file))
+            fs.copyFile(
+              path.join(sidecarDir, path.basename(file)),
+              path.join(sidecarExportDir, path.basename(file))
+            ).catch((err) => {
+              warnings.push(`Failed to copy sidecar ${file}: ${err}`);
+            })
           )
         );
-      } catch {
-        // ignore missing sidecars
+      } catch (err) {
+        warnings.push(`Failed to read sidecar directory: ${err}`);
       }
 
       const trainingDir = getTrainingDir(runDir);
       const trainingExportDir = path.join(exportDir, "training");
       try {
         await fs.cp(trainingDir, trainingExportDir, { recursive: true });
-      } catch {
-        // ignore missing training signals
+      } catch (err) {
+        warnings.push(`Failed to copy training directory: ${err}`);
       }
 
       const normalizedDir = getNormalizedDir(runDir);
       let normalizedFiles: string[] = [];
       try {
         normalizedFiles = await fs.readdir(normalizedDir);
-      } catch {
+      } catch (err) {
+        warnings.push(`Failed to read normalized directory: ${err}`);
         normalizedFiles = [];
       }
 
-      await Promise.all(
-        formats.map((format) =>
-          exportNormalizedByFormat({ format, exportDir, normalizedDir, normalizedFiles })
-        )
-      );
+      try {
+        await Promise.all(
+          formats.map((format) =>
+            exportNormalizedByFormat({ format, exportDir, normalizedDir, normalizedFiles }).catch(
+              (err) => {
+                warnings.push(`Failed to export format ${format}: ${err}`);
+              }
+            )
+          )
+        );
+      } catch (err) {
+        warnings.push(`Format export failed: ${err}`);
+      }
+
+      if (warnings.length > 0) {
+        console.warn(`Export completed with warnings for runId ${runId}:`, warnings);
+      }
 
       return exportDir;
     }
@@ -645,16 +666,10 @@ export function registerIpcHandlers(): void {
       decisions: ReviewDecision[]
     ): Promise<void> => {
       validateRunId(runId);
-      validateOverrides({ decisions });
+      validateReviewDecisions(decisions);
       const reviewDir = path.join(resolveOutputDir(), "reviews");
       await fs.mkdir(reviewDir, { recursive: true });
-      const reviewPath = path.join(reviewDir, `${runId}.json`);
       const submittedAt = new Date().toISOString();
-      await writeJsonAtomic(reviewPath, {
-        runId,
-        submittedAt,
-        decisions,
-      });
 
       const outputDir = resolveOutputDir();
       const runDir = await resolveRunDir(outputDir, runId);
@@ -673,7 +688,6 @@ export function registerIpcHandlers(): void {
 
       for (const decision of decisions) {
         const pageId = decision.pageId;
-        if (!pageId) continue;
         const sidecarPath = getRunSidecarPath(runDir, pageId);
         const overridePath = path.join(runDir, "overrides", `${pageId}.json`);
 
@@ -681,7 +695,8 @@ export function registerIpcHandlers(): void {
         try {
           const raw = await fs.readFile(sidecarPath, "utf-8");
           sidecar = JSON.parse(raw) as Record<string, unknown>;
-        } catch {
+        } catch (err) {
+          console.warn(`Failed to read sidecar for page ${pageId}:`, err);
           sidecar = null;
         }
 
@@ -690,6 +705,7 @@ export function registerIpcHandlers(): void {
           const raw = await fs.readFile(overridePath, "utf-8");
           overrideRecord = JSON.parse(raw) as { overrides?: Record<string, unknown>; appliedAt?: string };
         } catch {
+          // Override is optional, no warning needed
           overrideRecord = null;
         }
 
@@ -821,6 +837,14 @@ export function registerIpcHandlers(): void {
         },
         pages: trainingSignals,
         templates: templateSignals,
+      });
+
+      // Write review submission record after all processing is complete
+      const reviewPath = path.join(reviewDir, `${runId}.json`);
+      await writeJsonAtomic(reviewPath, {
+        runId,
+        submittedAt,
+        decisions,
       });
     }
   );
