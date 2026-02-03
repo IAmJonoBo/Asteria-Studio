@@ -390,6 +390,36 @@ export interface PipelineConfig {
     include_json_sidecars: boolean;
     naming: string;
   };
+  snapping: {
+    enabled: boolean;
+    radius_px: number;
+    min_confidence: {
+      template: number;
+      detected: number;
+      baseline: number;
+      user: number;
+    };
+    weighting: {
+      template: number;
+      detected: number;
+      baseline: number;
+      user: number;
+    };
+  };
+  templates: {
+    enabled: boolean;
+    clustering: {
+      min_pages: number;
+      min_similarity: number;
+      max_clusters: number;
+    };
+  };
+  guides: {
+    lod: {
+      major_only_zoom: number;
+      labels_zoom: number;
+    };
+  };
   logging: { level: string; per_page_logs: boolean; keep_logs: boolean };
 }
 
