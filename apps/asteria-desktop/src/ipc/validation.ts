@@ -160,6 +160,42 @@ export const validatePipelineRunConfig = (config: PipelineRunConfig): void => {
   }
 };
 
+export const validateReviewDecisions = (decisions: unknown): void => {
+  if (!Array.isArray(decisions) || decisions.length === 0) {
+    throw new Error("Invalid review decisions: expected non-empty array");
+  }
+
+  decisions.forEach((decision, index) => {
+    if (!isPlainObject(decision)) {
+      throw new Error(`Invalid review decision ${index}: expected object`);
+    }
+
+    if (!isNonEmptyString(decision.pageId)) {
+      throw new Error(`Invalid review decision ${index}: pageId required`);
+    }
+
+    const allowedDecisions = new Set(["accept", "reject", "adjust"]);
+    if (!allowedDecisions.has(decision.decision as string)) {
+      throw new Error(
+        `Invalid review decision ${index}: decision must be "accept", "reject", or "adjust"`
+      );
+    }
+
+    if (decision.notes !== undefined && typeof decision.notes !== "string") {
+      throw new Error(`Invalid review decision ${index}: notes must be a string`);
+    }
+
+    if (decision.overrides !== undefined) {
+      if (!isPlainObject(decision.overrides)) {
+        throw new Error(`Invalid review decision ${index}: overrides must be an object`);
+      }
+      if (!isJsonSafe(decision.overrides)) {
+        throw new Error(`Invalid review decision ${index}: overrides must be JSON-safe`);
+      }
+    }
+  });
+};
+
 export const validatePageLayoutSidecar = (layout: PageLayoutSidecar): void => {
   if (!isPlainObject(layout)) {
     throw new Error("Invalid page layout: expected object");
