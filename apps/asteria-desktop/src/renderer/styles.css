@@ -108,6 +108,25 @@ body {
   flex-direction: column;
 }
 
+.boot-splash {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.boot-title {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.boot-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
 /* Focus styles - visible and accessible */
 :focus-visible {
   outline: 2px solid var(--color-primary);

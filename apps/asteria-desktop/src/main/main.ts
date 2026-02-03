@@ -8,6 +8,38 @@ loadEnv();
 const isDev = !app.isPackaged || process.env.NODE_ENV === "development";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const attachLoadLogging = (win: BrowserWindow): void => {
+  const { webContents } = win;
+
+  webContents.on("did-start-loading", () => {
+    console.log("[renderer] loading start");
+    win.setTitle("Asteria Studio — Loading…");
+  });
+
+  webContents.on("did-stop-loading", () => {
+    console.log("[renderer] loading complete");
+    win.setTitle("Asteria Studio");
+  });
+
+  webContents.on("did-fail-load", (_event, code, description, url, isMainFrame) => {
+    console.error(`[renderer] failed to load ${url}: ${description} (${code})`);
+    if (isMainFrame) {
+      dialog.showErrorBox(
+        "Asteria Studio - UI Load Failed",
+        `Failed to load the renderer UI.\\n\\n${description} (${code})\\n${url}`
+      );
+    }
+  });
+
+  webContents.on("render-process-gone", (_event, details) => {
+    console.error(`[renderer] process gone: ${details.reason} (${details.exitCode})`);
+  });
+
+  webContents.on("console-message", (_event, level, message, line, sourceId) => {
+    console.log(`[renderer][${level}] ${message} (${sourceId}:${line})`);
+  });
+};
+
 const ensureSharp = async (): Promise<boolean> => {
   try {
     await import("sharp");
@@ -41,6 +73,8 @@ async function createWindow(): Promise<void> {
       nodeIntegration: false,
     },
   });
+
+  attachLoadLogging(win);
 
   if (isDev) {
     await win.loadURL("http://localhost:5173");
