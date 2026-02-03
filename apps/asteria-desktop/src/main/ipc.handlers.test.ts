@@ -7,6 +7,7 @@ const readFile = vi.hoisted(() => vi.fn());
 const mkdir = vi.hoisted(() => vi.fn());
 const writeFile = vi.hoisted(() => vi.fn());
 const copyFile = vi.hoisted(() => vi.fn());
+const cp = vi.hoisted(() => vi.fn());
 const readdir = vi.hoisted(() => vi.fn());
 const rm = vi.hoisted(() => vi.fn());
 const rename = vi.hoisted(() => vi.fn());
@@ -28,11 +29,12 @@ vi.mock("electron", () => ({
 }));
 
 vi.mock("node:fs/promises", () => ({
-  default: { readFile, mkdir, writeFile, copyFile, readdir, rm, rename },
+  default: { readFile, mkdir, writeFile, copyFile, cp, readdir, rm, rename },
   readFile,
   mkdir,
   writeFile,
   copyFile,
+  cp,
   readdir,
   rm,
   rename,
@@ -71,6 +73,7 @@ describe("IPC handler registration", () => {
     mkdir.mockReset();
     writeFile.mockReset();
     copyFile.mockReset();
+    cp.mockReset();
     readdir.mockReset();
     rm.mockReset();
     rename.mockReset();
@@ -294,7 +297,6 @@ describe("IPC handler registration", () => {
 
     readdir
       .mockResolvedValueOnce(["page-1.json"])
-      .mockResolvedValueOnce(["signal-1.json"])
       .mockResolvedValueOnce(["page1.png", "page2.png", "notes.txt"]);
 
     await (
@@ -332,10 +334,9 @@ describe("IPC handler registration", () => {
       path.join(sidecarDir, "page-1.json"),
       path.join(exportDir, "sidecars", "page-1.json")
     );
-    expect(copyFile).toHaveBeenCalledWith(
-      path.join(trainingDir, "signal-1.json"),
-      path.join(exportDir, "training", "signal-1.json")
-    );
+    expect(cp).toHaveBeenCalledWith(trainingDir, path.join(exportDir, "training"), {
+      recursive: true,
+    });
     expect(sharpCall.tiff).toHaveBeenCalledTimes(2);
     expect(sharpCall.toFormat).toHaveBeenCalledTimes(2);
     expect(sharpCall.toFormat).toHaveBeenCalledWith("pdf");

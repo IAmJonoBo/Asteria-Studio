@@ -81,6 +81,24 @@ const exportNormalizedByFormat = async (params: {
   );
 };
 
+const sanitizeTrainingId = (value: string): string => value.replace(/[\\/]/g, "_");
+
+const loadRunDeterminism = async (
+  runDir: string
+): Promise<{ appVersion: string; configHash: string }> => {
+  const reportPath = getRunReportPath(runDir);
+  try {
+    const raw = await fs.readFile(reportPath, "utf-8");
+    const report = JSON.parse(raw) as { determinism?: { appVersion?: string; configHash?: string } };
+    return {
+      appVersion: report.determinism?.appVersion ?? "unknown",
+      configHash: report.determinism?.configHash ?? "unknown",
+    };
+  } catch {
+    return { appVersion: "unknown", configHash: "unknown" };
+  }
+};
+
 type Box = [number, number, number, number];
 type ElementEdit = {
   action: "add" | "update" | "remove";
@@ -467,13 +485,7 @@ export function registerIpcHandlers(): void {
       const trainingDir = getTrainingDir(runDir);
       const trainingExportDir = path.join(exportDir, "training");
       try {
-        const trainingFiles = await fs.readdir(trainingDir);
-        await fs.mkdir(trainingExportDir, { recursive: true });
-        await Promise.all(
-          trainingFiles.map((file) =>
-            fs.copyFile(path.join(trainingDir, file), path.join(trainingExportDir, file))
-          )
-        );
+        await fs.cp(trainingDir, trainingExportDir, { recursive: true });
       } catch {
         // ignore missing training signals
       }
@@ -647,9 +659,17 @@ export function registerIpcHandlers(): void {
       const outputDir = resolveOutputDir();
       const runDir = await resolveRunDir(outputDir, runId);
       const trainingDir = getTrainingDir(runDir);
-      await fs.mkdir(trainingDir, { recursive: true });
+      const trainingPageDir = path.join(trainingDir, "page");
+      const trainingTemplateDir = path.join(trainingDir, "template");
+      await fs.mkdir(trainingPageDir, { recursive: true });
+      await fs.mkdir(trainingTemplateDir, { recursive: true });
+      const determinism = await loadRunDeterminism(runDir);
 
       const trainingSignals: Array<Record<string, unknown>> = [];
+      const templateLinkage = new Map<
+        string,
+        { template: Record<string, unknown>; pages: Set<string> }
+      >();
 
       for (const decision of decisions) {
         const pageId = decision.pageId;
@@ -688,27 +708,109 @@ export function registerIpcHandlers(): void {
           });
         }
 
-        const safePageId = pageId.replace(/[\\/]/g, "_");
+        const safePageId = sanitizeTrainingId(pageId);
+        const runningHeadTemplates = Array.isArray(sidecar?.bookModel?.runningHeadTemplates)
+          ? (sidecar?.bookModel?.runningHeadTemplates as Array<Record<string, unknown>>)
+          : [];
+        for (const template of runningHeadTemplates) {
+          if (!template || typeof template !== "object") continue;
+          const templateId =
+            "id" in template && typeof template.id === "string" ? template.id : null;
+          if (!templateId) continue;
+          const entry = templateLinkage.get(templateId) ?? {
+            template,
+            pages: new Set<string>(),
+          };
+          entry.pages.add(pageId);
+          templateLinkage.set(templateId, entry);
+        }
+
+        const autoNormalization =
+          sidecar?.normalization && typeof sidecar.normalization === "object"
+            ? sidecar.normalization
+            : undefined;
+        const autoElements = Array.isArray(sidecar?.elements) ? sidecar?.elements : undefined;
+        const autoBookModel =
+          sidecar?.bookModel && typeof sidecar.bookModel === "object"
+            ? sidecar.bookModel
+            : undefined;
+
+        const overrideNormalization =
+          overrides?.normalization && typeof overrides.normalization === "object"
+            ? overrides.normalization
+            : undefined;
+        const overrideElements =
+          overrides?.elements && Array.isArray(overrides.elements) ? overrides.elements : undefined;
+
         const trainingSignal = {
           runId,
           pageId,
           decision: decision.decision,
           notes: decision.notes,
-          submittedAt,
-          appliedAt,
-          adjustments: adjustments ?? undefined,
-          overrides: overrides ?? undefined,
+          confirmed: decision.decision !== "reject",
+          timestamps: {
+            submittedAt,
+            appliedAt,
+          },
+          appVersion: determinism.appVersion,
+          configHash: determinism.configHash,
+          templateIds: runningHeadTemplates
+            .map((template) =>
+              "id" in template && typeof template.id === "string" ? template.id : null
+            )
+            .filter((templateId): templateId is string => Boolean(templateId)),
+          auto: {
+            normalization: autoNormalization,
+            elements: autoElements,
+            bookModel: autoBookModel,
+          },
+          final: {
+            normalization: overrideNormalization ?? autoNormalization,
+            elements: overrideElements ?? autoElements,
+            bookModel: autoBookModel,
+          },
+          delta: adjustments ?? undefined,
           sidecarPath: `sidecars/${pageId}.json`,
         };
         trainingSignals.push(trainingSignal);
-        await writeJsonAtomic(path.join(trainingDir, `${safePageId}.json`), trainingSignal);
+        await writeJsonAtomic(path.join(trainingPageDir, `${safePageId}.json`), trainingSignal);
+      }
+
+      const templateSignals: Array<Record<string, unknown>> = [];
+      for (const [templateId, entry] of templateLinkage.entries()) {
+        const safeTemplateId = sanitizeTrainingId(templateId);
+        const templateSignal = {
+          runId,
+          templateId,
+          confirmed: entry.pages.size > 0,
+          timestamps: {
+            submittedAt,
+          },
+          appVersion: determinism.appVersion,
+          configHash: determinism.configHash,
+          pages: Array.from(entry.pages),
+          auto: entry.template,
+          final: entry.template,
+          delta: undefined,
+        };
+        templateSignals.push(templateSignal);
+        await writeJsonAtomic(
+          path.join(trainingTemplateDir, `${safeTemplateId}.json`),
+          templateSignal
+        );
       }
 
       await writeJsonAtomic(path.join(trainingDir, "manifest.json"), {
         runId,
         submittedAt,
-        count: trainingSignals.length,
-        signals: trainingSignals,
+        appVersion: determinism.appVersion,
+        configHash: determinism.configHash,
+        counts: {
+          pages: trainingSignals.length,
+          templates: templateSignals.length,
+        },
+        pages: trainingSignals,
+        templates: templateSignals,
       });
     }
   );
