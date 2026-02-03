@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import type { GuideLayout, GuideLayerData, GuideLine } from "../../ipc/contracts.js";
 
 export type GuideGroup = "structural" | "detected" | "diagnostic";
@@ -11,7 +12,7 @@ export type GuideLayerDefinition = {
   id: string;
   group: GuideGroup;
   defaultVisible: boolean;
-  renderFn: (context: GuideRenderContext) => JSX.Element | null;
+  renderFn: (context: GuideRenderContext) => ReactElement | null;
   hitTestFn: (context: GuideHitTestContext) => GuideHitTestResult | null;
   editableFn: (context: GuideEditContext) => boolean;
 };
@@ -68,9 +69,17 @@ const guidePaletteByGroup: Record<GuideGroup, string> = {
   diagnostic: "var(--guide-palette-diagnostic)",
 };
 
-const renderLinearGuideLayer = (context: GuideRenderContext): JSX.Element | null => {
-  const { layer, layerData, canvasWidth, canvasHeight, lod, palette, hoveredGuideId, activeGuideId } =
-    context;
+const renderLinearGuideLayer = (context: GuideRenderContext): ReactElement | null => {
+  const {
+    layer,
+    layerData,
+    canvasWidth,
+    canvasHeight,
+    lod,
+    palette,
+    hoveredGuideId,
+    activeGuideId,
+  } = context;
   if (!layerData?.guides?.length) return null;
 
   const visibleGuides = layerData.guides.filter((guide) => {
@@ -204,7 +213,7 @@ export const renderGuideLayers = ({
   hoveredGuideId?: string;
   activeGuideId?: string;
   visibleLayers?: Record<string, boolean>;
-}): JSX.Element[] => {
+}): ReactElement[] => {
   const lod = getGuideLod(zoom);
   const layerDataMap = new Map<string, GuideLayerData>();
   guideLayout?.layers?.forEach((layer) => {
@@ -228,5 +237,5 @@ export const renderGuideLayers = ({
         activeGuideId,
       });
     })
-    .filter((entry): entry is JSX.Element => entry !== null);
+    .filter((entry): entry is ReactElement => entry !== null);
 };

@@ -150,7 +150,7 @@ export function App(): JSX.Element {
         }>)
       | undefined;
     const startRun = windowRef.asteria.ipc["asteria:start-run"] as
-      | ((config: PipelineRunConfig) => Promise<{ runId: string }>)
+      | ((config: PipelineRunConfig) => Promise<{ runId: string; runDir: string }>)
       | undefined;
     if (!scanCorpus || !startRun) return;
     try {

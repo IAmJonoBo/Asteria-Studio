@@ -91,6 +91,8 @@ export interface PageTemplate {
   textDensity?: number;
   whitespaceRatio?: number;
   confidence: number;
+}
+
 export interface BaselineGridGuide {
   spacingPx?: number;
   offsetPx?: number;
@@ -561,9 +563,13 @@ export interface IpcChannels {
     _projectId: string,
     _overrides: PipelineConfigOverrides
   ) => Promise<void>;
-  "asteria:get-run-config": (_runId: string) => Promise<RunConfigSnapshot | null>;
-  "asteria:fetch-review-queue": (_runId: string) => Promise<ReviewQueue>;
-  "asteria:submit-review": (_runId: string, _decisions: ReviewDecision[]) => Promise<void>;
+  "asteria:get-run-config": (_runId: string, _runDir: string) => Promise<RunConfigSnapshot | null>;
+  "asteria:fetch-review-queue": (_runId: string, _runDir: string) => Promise<ReviewQueue>;
+  "asteria:submit-review": (
+    _runId: string,
+    _runDir: string,
+    _decisions: ReviewDecision[]
+  ) => Promise<void>;
   "asteria:record-template-training": (
     _runId: string,
     _signal: TemplateTrainingSignal

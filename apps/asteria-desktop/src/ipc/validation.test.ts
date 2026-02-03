@@ -127,37 +127,49 @@ describe("validateTemplateTrainingSignal", () => {
   it("rejects signal when templateId is missing", () => {
     const invalid = buildValidSignal();
     delete (invalid as Partial<TemplateTrainingSignal>).templateId;
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/templateId required/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /templateId required/
+    );
   });
 
   it("rejects signal when scope is invalid", () => {
     const invalid = buildValidSignal();
     (invalid as { scope: string }).scope = "invalid";
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/scope must be template or section/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /scope must be template or section/
+    );
   });
 
   it("rejects signal when appliedAt is missing", () => {
     const invalid = buildValidSignal();
     delete (invalid as Partial<TemplateTrainingSignal>).appliedAt;
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/appliedAt required/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /appliedAt required/
+    );
   });
 
   it("rejects signal when pages array is empty", () => {
     const invalid = buildValidSignal();
     invalid.pages = [];
-    expect(() => validateTemplateTrainingSignal(invalid)).toThrow(/pages must be a non-empty array/);
+    expect(() => validateTemplateTrainingSignal(invalid)).toThrow(
+      /pages must be a non-empty array/
+    );
   });
 
   it("rejects signal when pages contains non-string", () => {
     const invalid = buildValidSignal();
     (invalid.pages as unknown[]) = ["page-1", 123];
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/pages\[1\] must be a string/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /pages\[1\] must be a string/
+    );
   });
 
   it("validates nested overrides", () => {
     const invalid = buildValidSignal();
     invalid.overrides = { normalization: { fn: () => null } };
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/overrides/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /overrides/
+    );
   });
 
   it("accepts optional sourcePageId and layoutProfile", () => {
@@ -170,12 +182,16 @@ describe("validateTemplateTrainingSignal", () => {
   it("rejects when sourcePageId is not a string", () => {
     const invalid = buildValidSignal();
     (invalid as { sourcePageId: unknown }).sourcePageId = 123;
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/sourcePageId must be a string/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /sourcePageId must be a string/
+    );
   });
 
   it("rejects when layoutProfile is not a string", () => {
     const invalid = buildValidSignal();
     (invalid as { layoutProfile: unknown }).layoutProfile = 123;
-    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(/layoutProfile must be a string/);
+    expect(() => validateTemplateTrainingSignal(invalid as TemplateTrainingSignal)).toThrow(
+      /layoutProfile must be a string/
+    );
   });
 });

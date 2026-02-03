@@ -852,13 +852,14 @@ const computeBaselineSignal = (
   }
   const peakSharpness = sharpnessValues.length > 0 ? median(sharpnessValues) : 0;
   const peaksY =
-    rowSums.length > 1 ? peaks.map((y) => y / (rowSums.length - 1)) : new Array(peaks.length).fill(0);
+    rowSums.length > 1
+      ? peaks.map((y) => y / (rowSums.length - 1))
+      : new Array(peaks.length).fill(0);
   const deltas = peaksY.slice(1).map((val, idx) => val - peaksY[idx]);
   const spacingNorm = deltas.length > 0 ? median(deltas) : 0;
   const spacingMADNorm =
     spacingNorm > 0 ? median(deltas.map((delta) => Math.abs(delta - spacingNorm))) : 0;
-  const offsetNorm =
-    spacingNorm > 0 ? median(peaksY.map((peak) => peak % spacingNorm)) : 0;
+  const offsetNorm = spacingNorm > 0 ? median(peaksY.map((peak) => peak % spacingNorm)) : 0;
   const peakCountScore = clamp01((peaks.length - 2) / 8);
   const spacingScore = spacingNorm > 0 ? clamp01(1 - spacingMADNorm / spacingNorm) : 0;
   const sharpnessScore = clamp01(peakSharpness / 3);

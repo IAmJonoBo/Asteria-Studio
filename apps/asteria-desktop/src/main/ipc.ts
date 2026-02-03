@@ -25,6 +25,7 @@ import {
   validateOverrides,
   validatePageId,
   validatePipelineRunConfig,
+  validateReviewDecisions,
   validateRunDir,
   validateRunId,
   validateTemplateTrainingSignal,
@@ -52,7 +53,9 @@ import { importCorpus, listProjects, normalizeCorpusPath } from "./projects.js";
 
 type ExportFormat = "png" | "tiff" | "pdf";
 
-const readTemplateSignals = async (templateDir: string): Promise<Array<Record<string, unknown>>> => {
+const readTemplateSignals = async (
+  templateDir: string
+): Promise<Array<Record<string, unknown>>> => {
   const templateSignals: Array<Record<string, unknown>> = [];
   try {
     const templateFiles = await fs.readdir(templateDir);
@@ -104,6 +107,26 @@ const exportNormalizedByFormat = async (params: {
   );
 };
 
+const sanitizeTrainingId = (value: string): string => value.replace(/[\\/]/g, "_");
+
+const loadRunDeterminism = async (
+  runDir: string
+): Promise<{ appVersion: string; configHash: string }> => {
+  const reportPath = getRunReportPath(runDir);
+  try {
+    const raw = await fs.readFile(reportPath, "utf-8");
+    const report = JSON.parse(raw) as {
+      determinism?: { appVersion?: string; configHash?: string };
+    };
+    return {
+      appVersion: report.determinism?.appVersion ?? "unknown",
+      configHash: report.determinism?.configHash ?? "unknown",
+    };
+  } catch {
+    return { appVersion: "unknown", configHash: "unknown" };
+  }
+};
+
 type Box = [number, number, number, number];
 type ElementEdit = {
   action: "add" | "update" | "remove";
@@ -153,13 +176,23 @@ const buildElementEdits = (
   const baseArray = Array.isArray(baseElements) ? baseElements : [];
   const baseMap = new Map<string, Record<string, unknown>>();
   for (const element of baseArray) {
-    if (element && typeof element === "object" && "id" in element && typeof element.id === "string") {
+    if (
+      element &&
+      typeof element === "object" &&
+      "id" in element &&
+      typeof element.id === "string"
+    ) {
       baseMap.set(element.id, element as Record<string, unknown>);
     }
   }
   const overrideMap = new Map<string, Record<string, unknown>>();
   for (const element of overrideElements) {
-    if (element && typeof element === "object" && "id" in element && typeof element.id === "string") {
+    if (
+      element &&
+      typeof element === "object" &&
+      "id" in element &&
+      typeof element.id === "string"
+    ) {
       overrideMap.set(element.id, element as Record<string, unknown>);
     }
   }
@@ -206,7 +239,8 @@ const readBaselineGridOverride = (
   const markRaw = baselineGrid.markCorrect;
 
   const result: BaselineGridGuide = {};
-  if (isFiniteNumber(spacingRaw) || spacingRaw === null) result.spacingPx = spacingRaw as number | null;
+  if (isFiniteNumber(spacingRaw) || spacingRaw === null)
+    result.spacingPx = spacingRaw as number | null;
   if (isFiniteNumber(offsetRaw) || offsetRaw === null) result.offsetPx = offsetRaw as number | null;
   if (isFiniteNumber(angleRaw) || angleRaw === null) result.angleDeg = angleRaw as number | null;
   if (typeof snapRaw === "boolean") result.snapToPeaks = snapRaw;
@@ -215,14 +249,19 @@ const readBaselineGridOverride = (
   return Object.keys(result).length > 0 ? result : null;
 };
 
-const readAutoBaselineGrid = (sidecar: Record<string, unknown> | null): BaselineGridGuide | null => {
+const readAutoBaselineGrid = (
+  sidecar: Record<string, unknown> | null
+): BaselineGridGuide | null => {
   if (!sidecar || typeof sidecar !== "object") return null;
   const bookModel =
     "bookModel" in sidecar && sidecar.bookModel && typeof sidecar.bookModel === "object"
       ? (sidecar.bookModel as Record<string, unknown>)
       : null;
   const baselineModel =
-    bookModel && "baselineGrid" in bookModel && bookModel.baselineGrid && typeof bookModel.baselineGrid === "object"
+    bookModel &&
+    "baselineGrid" in bookModel &&
+    bookModel.baselineGrid &&
+    typeof bookModel.baselineGrid === "object"
       ? (bookModel.baselineGrid as Record<string, unknown>)
       : null;
   const metrics =
@@ -245,9 +284,8 @@ const readAutoBaselineGrid = (sidecar: Record<string, unknown> | null): Baseline
     (baselineMetrics && isFiniteNumber(baselineMetrics.medianSpacingPx)
       ? baselineMetrics.medianSpacingPx
       : null);
-  const angle = normalization && isFiniteNumber(normalization.skewAngle)
-    ? normalization.skewAngle
-    : null;
+  const angle =
+    normalization && isFiniteNumber(normalization.skewAngle) ? normalization.skewAngle : null;
 
   const result: BaselineGridGuide = {};
   if (spacing !== null) result.spacingPx = spacing;
@@ -349,6 +387,8 @@ const buildAdjustmentSummary = (params: {
 export function registerIpcHandlers(): void {
   const resolveOutputDir = (): string =>
     process.env.ASTERIA_OUTPUT_DIR ?? path.join(process.cwd(), "pipeline-results");
+  const resolveRunDir = async (outputDir: string, runId: string): Promise<string> =>
+    getRunDir(outputDir, runId);
 
   ipcMain.handle(
     "asteria:start-run",
@@ -513,7 +553,7 @@ export function registerIpcHandlers(): void {
           (sidecar.decisions && typeof sidecar.decisions === "object"
             ? (sidecar.decisions as Record<string, unknown>)
             : {}) ?? {};
-        
+
         // Extract actual field paths from overrides (e.g., "normalization.cropBox", "normalization.rotationDeg")
         const overrideFieldPaths: string[] = [];
         const collectFieldPaths = (obj: Record<string, unknown>, prefix = ""): void => {
@@ -528,7 +568,7 @@ export function registerIpcHandlers(): void {
           }
         };
         collectFieldPaths(overrides);
-        
+
         await writeJsonAtomic(sidecarPath, {
           ...sidecar,
           overrides,
@@ -547,9 +587,7 @@ export function registerIpcHandlers(): void {
         const manifest = JSON.parse(raw) as { pages?: Array<Record<string, unknown>> };
         if (Array.isArray(manifest.pages)) {
           manifest.pages = manifest.pages.map((page) =>
-            page.pageId === pageId
-              ? { ...page, overrides, overrideAppliedAt: appliedAt }
-              : page
+            page.pageId === pageId ? { ...page, overrides, overrideAppliedAt: appliedAt } : page
           );
           await writeJsonAtomic(manifestPath, manifest);
         }
@@ -574,23 +612,25 @@ export function registerIpcHandlers(): void {
       const exportDir = path.join(runDir, "exports", timestamp);
       await fs.mkdir(exportDir, { recursive: true });
 
+      const warnings: string[] = [];
+
       const manifestPath = getRunManifestPath(runDir);
       const reportPath = getRunReportPath(runDir);
       const reviewQueuePath = getRunReviewQueuePath(runDir);
       try {
         await fs.copyFile(manifestPath, path.join(exportDir, "manifest.json"));
-      } catch {
-        // ignore missing manifest
+      } catch (err) {
+        warnings.push(`Failed to copy manifest: ${err}`);
       }
       try {
         await fs.copyFile(reportPath, path.join(exportDir, "report.json"));
-      } catch {
-        // ignore missing report
+      } catch (err) {
+        warnings.push(`Failed to copy report: ${err}`);
       }
       try {
         await fs.copyFile(reviewQueuePath, path.join(exportDir, "review-queue.json"));
-      } catch {
-        // ignore missing review queue
+      } catch (err) {
+        warnings.push(`Failed to copy review queue: ${err}`);
       }
 
       const sidecarDir = getSidecarDir(runDir);
@@ -600,40 +640,54 @@ export function registerIpcHandlers(): void {
         await fs.mkdir(sidecarExportDir, { recursive: true });
         await Promise.all(
           sidecarFiles.map((file) =>
-            fs.copyFile(path.join(sidecarDir, file), path.join(sidecarExportDir, file))
+            fs
+              .copyFile(
+                path.join(sidecarDir, path.basename(file)),
+                path.join(sidecarExportDir, path.basename(file))
+              )
+              .catch((err) => {
+                warnings.push(`Failed to copy sidecar ${file}: ${err}`);
+              })
           )
         );
-      } catch {
-        // ignore missing sidecars
+      } catch (err) {
+        warnings.push(`Failed to read sidecar directory: ${err}`);
       }
 
       const trainingDir = getTrainingDir(runDir);
       const trainingExportDir = path.join(exportDir, "training");
       try {
-        const trainingFiles = await fs.readdir(trainingDir);
-        await fs.mkdir(trainingExportDir, { recursive: true });
-        await Promise.all(
-          trainingFiles.map((file) =>
-            fs.copyFile(path.join(trainingDir, file), path.join(trainingExportDir, file))
-          )
-        );
-      } catch {
-        // ignore missing training signals
+        await fs.cp(trainingDir, trainingExportDir, { recursive: true });
+      } catch (err) {
+        warnings.push(`Failed to copy training directory: ${err}`);
       }
 
       const normalizedDir = getNormalizedDir(runDir);
       let normalizedFiles: string[] = [];
       try {
         normalizedFiles = await fs.readdir(normalizedDir);
-      } catch {
+      } catch (err) {
+        warnings.push(`Failed to read normalized directory: ${err}`);
         normalizedFiles = [];
       }
 
-      await Promise.all(
-        formats.map((format) =>
-          exportNormalizedByFormat({ format, exportDir, normalizedDir, normalizedFiles })
-        )
-      );
+      try {
+        await Promise.all(
+          formats.map((format) =>
+            exportNormalizedByFormat({ format, exportDir, normalizedDir, normalizedFiles }).catch(
+              (err) => {
+                warnings.push(`Failed to export format ${format}: ${err}`);
+              }
+            )
+          )
+        );
+      } catch (err) {
+        warnings.push(`Format export failed: ${err}`);
+      }
+
+      if (warnings.length > 0) {
+        console.warn(`Export completed with warnings for runId ${runId}:`, warnings);
+      }
 
       return exportDir;
     }
@@ -758,11 +812,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:fetch-review-queue",
-    async (
-      _event: IpcMainInvokeEvent,
-      runId: string,
-      runDir: string
-    ): Promise<ReviewQueue> => {
+    async (_event: IpcMainInvokeEvent, runId: string, runDir: string): Promise<ReviewQueue> => {
       validateRunId(runId);
       validateRunDir(runDir, runId);
       const reviewPath = getRunReviewQueuePath(runDir);
@@ -811,25 +861,27 @@ export function registerIpcHandlers(): void {
     ): Promise<void> => {
       validateRunId(runId);
       validateRunDir(runDir, runId);
+      validateReviewDecisions(decisions);
       validateOverrides({ decisions });
       const reviewDir = path.join(runDir, "reviews");
       await fs.mkdir(reviewDir, { recursive: true });
-      const reviewPath = path.join(reviewDir, `${runId}.json`);
       const submittedAt = new Date().toISOString();
-      await writeJsonAtomic(reviewPath, {
-        runId,
-        submittedAt,
-        decisions,
-      });
 
       const trainingDir = getTrainingDir(runDir);
-      await fs.mkdir(trainingDir, { recursive: true });
+      const trainingPageDir = path.join(trainingDir, "page");
+      const trainingTemplateDir = path.join(trainingDir, "template");
+      await fs.mkdir(trainingPageDir, { recursive: true });
+      await fs.mkdir(trainingTemplateDir, { recursive: true });
+      const determinism = await loadRunDeterminism(runDir);
 
       const trainingSignals: Array<Record<string, unknown>> = [];
+      const templateLinkage = new Map<
+        string,
+        { template: Record<string, unknown>; pages: Set<string>; confirmedPages: Set<string> }
+      >();
 
       for (const decision of decisions) {
         const pageId = decision.pageId;
-        if (!pageId) continue;
         const sidecarPath = getRunSidecarPath(runDir, pageId);
         const overridePath = path.join(runDir, "overrides", `${pageId}.json`);
 
@@ -837,15 +889,21 @@ export function registerIpcHandlers(): void {
         try {
           const raw = await fs.readFile(sidecarPath, "utf-8");
           sidecar = JSON.parse(raw) as Record<string, unknown>;
-        } catch {
+        } catch (err) {
+          console.warn(`Failed to read sidecar for page ${pageId}:`, err);
           sidecar = null;
         }
 
-        let overrideRecord: { overrides?: Record<string, unknown>; appliedAt?: string } | null = null;
+        let overrideRecord: { overrides?: Record<string, unknown>; appliedAt?: string } | null =
+          null;
         try {
           const raw = await fs.readFile(overridePath, "utf-8");
-          overrideRecord = JSON.parse(raw) as { overrides?: Record<string, unknown>; appliedAt?: string };
+          overrideRecord = JSON.parse(raw) as {
+            overrides?: Record<string, unknown>;
+            appliedAt?: string;
+          };
         } catch {
+          // Override is optional, no warning needed
           overrideRecord = null;
         }
 
@@ -860,7 +918,6 @@ export function registerIpcHandlers(): void {
         const overrideBaselineGrid = readBaselineGridOverride(overrides ?? undefined);
         const finalBaselineGrid = mergeBaselineGridGuides(autoBaselineGrid, overrideBaselineGrid);
         const deltaBaselineGrid = buildBaselineGridDelta(autoBaselineGrid, finalBaselineGrid);
-        const confirmed = Boolean(finalBaselineGrid?.markCorrect ?? false);
         const provenance = {
           source: "review",
           runId,
@@ -869,9 +926,6 @@ export function registerIpcHandlers(): void {
           appliedAt,
           decision: decision.decision,
         };
-        const autoPayload = autoBaselineGrid ? { guides: { baselineGrid: autoBaselineGrid } } : null;
-        const finalPayload = finalBaselineGrid ? { guides: { baselineGrid: finalBaselineGrid } } : null;
-        const deltaPayload = deltaBaselineGrid ? { guides: { baselineGrid: deltaBaselineGrid } } : null;
 
         if (sidecar && adjustments) {
           await writeJsonAtomic(sidecarPath, {
@@ -880,37 +934,161 @@ export function registerIpcHandlers(): void {
           });
         }
 
-        const safePageId = pageId.replace(/[\\/]/g, "_");
+        const safePageId = sanitizeTrainingId(pageId);
+        const isConfirmed = decision.decision !== "reject";
+        const bookModel =
+          sidecar?.bookModel && typeof sidecar.bookModel === "object"
+            ? (sidecar.bookModel as Record<string, unknown>)
+            : null;
+        const runningHeadTemplates = Array.isArray(bookModel?.runningHeadTemplates)
+          ? (bookModel.runningHeadTemplates as Array<Record<string, unknown>>)
+          : [];
+        for (const template of runningHeadTemplates) {
+          if (!template || typeof template !== "object") continue;
+          const templateId =
+            "id" in template && typeof template.id === "string" ? template.id : null;
+          if (!templateId) continue;
+          const entry = templateLinkage.get(templateId) ?? {
+            template,
+            pages: new Set<string>(),
+            confirmedPages: new Set<string>(),
+          };
+          entry.pages.add(pageId);
+          if (isConfirmed) {
+            entry.confirmedPages.add(pageId);
+          }
+          templateLinkage.set(templateId, entry);
+        }
+
+        const autoNormalization =
+          sidecar?.normalization && typeof sidecar.normalization === "object"
+            ? sidecar.normalization
+            : undefined;
+        const autoElements = Array.isArray(sidecar?.elements) ? sidecar?.elements : undefined;
+        const autoBookModel =
+          sidecar?.bookModel && typeof sidecar.bookModel === "object"
+            ? sidecar.bookModel
+            : undefined;
+
+        const overrideNormalization =
+          overrides?.normalization && typeof overrides.normalization === "object"
+            ? overrides.normalization
+            : undefined;
+        const overrideElements =
+          overrides?.elements && Array.isArray(overrides.elements) ? overrides.elements : undefined;
+
+        const autoPayload: Record<string, unknown> = {};
+        if (autoNormalization) autoPayload.normalization = autoNormalization;
+        if (autoElements) autoPayload.elements = autoElements;
+        if (autoBookModel) autoPayload.bookModel = autoBookModel;
+        if (autoBaselineGrid) autoPayload.guides = { baselineGrid: autoBaselineGrid };
+
+        const finalPayload: Record<string, unknown> = {};
+        const finalNormalization = overrideNormalization ?? autoNormalization;
+        const finalElements = overrideElements ?? autoElements;
+        if (finalNormalization) finalPayload.normalization = finalNormalization;
+        if (finalElements) finalPayload.elements = finalElements;
+        if (autoBookModel) finalPayload.bookModel = autoBookModel;
+        if (finalBaselineGrid) finalPayload.guides = { baselineGrid: finalBaselineGrid };
+
+        const deltaPayload: Record<string, unknown> = adjustments ? { ...adjustments } : {};
+        if (deltaBaselineGrid) deltaPayload.guides = { baselineGrid: deltaBaselineGrid };
+
+        const auto =
+          Object.keys(autoPayload).length > 0
+            ? (autoPayload as Record<string, unknown>)
+            : undefined;
+        const final =
+          Object.keys(finalPayload).length > 0
+            ? (finalPayload as Record<string, unknown>)
+            : undefined;
+        const delta =
+          Object.keys(deltaPayload).length > 0
+            ? (deltaPayload as Record<string, unknown>)
+            : undefined;
+
         const trainingSignal = {
           runId,
           pageId,
           decision: decision.decision,
           notes: decision.notes,
-          submittedAt,
-          appliedAt,
-          adjustments: adjustments ?? undefined,
-          overrides: overrides ?? undefined,
+          confirmed: isConfirmed,
+          timestamps: {
+            submittedAt,
+            appliedAt,
+          },
+          appVersion: determinism.appVersion,
+          configHash: determinism.configHash,
+          templateIds: runningHeadTemplates
+            .map((template) =>
+              "id" in template && typeof template.id === "string" ? template.id : null
+            )
+            .filter((templateId): templateId is string => Boolean(templateId)),
+          auto,
+          final,
+          delta,
           sidecarPath: `sidecars/${pageId}.json`,
-          auto: autoPayload,
-          final: finalPayload,
-          delta: deltaPayload,
-          confirmed,
           provenance,
         };
         trainingSignals.push(trainingSignal);
-        await writeJsonAtomic(path.join(trainingDir, `${safePageId}.json`), trainingSignal);
+        await writeJsonAtomic(path.join(trainingPageDir, `${safePageId}.json`), trainingSignal);
       }
 
-      const templateDir = path.join(trainingDir, "template");
-      const templateSignals = await readTemplateSignals(templateDir);
+      const templateSignals: Array<Record<string, unknown>> = [];
+      for (const [templateId, entry] of templateLinkage.entries()) {
+        const safeTemplateId = sanitizeTrainingId(templateId);
+        const templateSignal = {
+          runId,
+          templateId,
+          confirmed: entry.confirmedPages.size > 0,
+          timestamps: {
+            submittedAt,
+          },
+          appVersion: determinism.appVersion,
+          configHash: determinism.configHash,
+          pages: Array.from(entry.pages),
+          confirmedPages: Array.from(entry.confirmedPages),
+          auto: entry.template,
+          final: entry.template,
+          delta: undefined,
+        };
+        templateSignals.push(templateSignal);
+        await writeJsonAtomic(
+          path.join(trainingTemplateDir, `${safeTemplateId}.json`),
+          templateSignal
+        );
+      }
 
-      await writeJsonAtomic(path.join(trainingDir, "manifest.json"), {
+      const templateTrainingSignals = (await readTemplateSignals(trainingTemplateDir)).filter(
+        (signal) => signal && typeof signal === "object" && "scope" in signal
+      );
+
+      const manifest: Record<string, unknown> = {
         runId,
         submittedAt,
-        count: trainingSignals.length,
-        signals: trainingSignals,
-        templateCount: templateSignals.length,
-        templateSignals,
+        appVersion: determinism.appVersion,
+        configHash: determinism.configHash,
+        counts: {
+          pages: trainingSignals.length,
+          templates: templateSignals.length,
+        },
+        pages: trainingSignals,
+        templates: templateSignals,
+      };
+
+      if (templateTrainingSignals.length > 0) {
+        manifest.templateTrainingSignalCount = templateTrainingSignals.length;
+        manifest.templateTrainingSignals = templateTrainingSignals;
+      }
+
+      await writeJsonAtomic(path.join(trainingDir, "manifest.json"), manifest);
+
+      // Write review submission record after all processing is complete
+      const reviewPath = path.join(reviewDir, `${runId}.json`);
+      await writeJsonAtomic(reviewPath, {
+        runId,
+        submittedAt,
+        decisions,
       });
     }
   );

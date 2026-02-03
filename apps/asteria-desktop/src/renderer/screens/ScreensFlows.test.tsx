@@ -108,11 +108,15 @@ describe("screen flows", () => {
   });
 
   it("ExportsScreen shows previous manifests and triggers export", async () => {
-    const listRuns = vi
-      .fn()
-      .mockResolvedValue([
-        { runId: "run-9", runDir: "/tmp/runs/run-9", projectId: "proj", generatedAt: "", reviewCount: 0 },
-      ]);
+    const listRuns = vi.fn().mockResolvedValue([
+      {
+        runId: "run-9",
+        runDir: "/tmp/runs/run-9",
+        projectId: "proj",
+        generatedAt: "",
+        reviewCount: 0,
+      },
+    ]);
     const exportRun = vi.fn().mockResolvedValue("/tmp/export");
     const getManifest = vi.fn().mockResolvedValue({
       runId: "run-9",

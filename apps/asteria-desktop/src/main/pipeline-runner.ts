@@ -214,9 +214,7 @@ const detectSpread = async (page: PageData): Promise<SpreadSplitResult> => {
   }
 };
 
-const parseSpreadId = (
-  pageId: string
-): { sourcePageId: string; side: "left" | "right" } | null => {
+const parseSpreadId = (pageId: string): { sourcePageId: string; side: "left" | "right" } | null => {
   if (pageId.endsWith("_L")) {
     return { sourcePageId: pageId.slice(0, -2), side: "left" };
   }
@@ -647,7 +645,7 @@ const computeTextFeatures = (params: {
 
   const contentBox =
     textElements.length > 0
-      ? textElements.reduce(
+      ? textElements.reduce<[number, number, number, number]>(
           (acc, element) => [
             Math.min(acc[0], element.bbox[0]),
             Math.min(acc[1], element.bbox[1]),
@@ -659,7 +657,7 @@ const computeTextFeatures = (params: {
             textElements[0].bbox[1],
             textElements[0].bbox[2],
             textElements[0].bbox[3],
-          ] as [number, number, number, number]
+          ]
         )
       : maskBox;
 
@@ -675,10 +673,7 @@ const computeTextFeatures = (params: {
     (element) => (element.bbox[0] + element.bbox[2]) / 2 > medianCenter
   );
   const leftMaxX = leftElements.reduce((max, element) => Math.max(max, element.bbox[2]), 0);
-  const rightMinX = rightElements.reduce(
-    (min, element) => Math.min(min, element.bbox[0]),
-    width
-  );
+  const rightMinX = rightElements.reduce((min, element) => Math.min(min, element.bbox[0]), width);
   const gap = Math.max(0, rightMinX - leftMaxX);
   const columnValleyRatio =
     leftElements.length >= 2 && rightElements.length >= 2 && gap > width * 0.04
@@ -700,7 +695,7 @@ const computeTextFeatures = (params: {
 const computeFolioBandScore = (
   elements: PageLayoutElement[],
   folioModel: BookModel["folioModel"],
-  height: number
+  _height: number
 ): number => {
   if (!folioModel?.positionBands?.length) return 0;
   const folios = elements.filter((element) => element.type === "folio");
@@ -714,7 +709,10 @@ const computeFolioBandScore = (
   return clamp01(hits / folioModel.positionBands.length);
 };
 
-const computeTemplateSimilarity = (page: PageTemplateFeatures, template: TemplateBuilder): number => {
+const computeTemplateSimilarity = (
+  page: PageTemplateFeatures,
+  template: TemplateBuilder
+): number => {
   const weights = {
     margin: 1,
     columnCount: 0.8,
@@ -784,13 +782,14 @@ const computeTemplateSimilarity = (page: PageTemplateFeatures, template: Templat
   return clamp01(1 - distance / totalWeight);
 };
 
+type NumericTemplateMeanKey = Exclude<keyof TemplateBuilder["mean"], "margins">;
+
 const updateTemplateMeans = (template: TemplateBuilder, page: PageTemplateFeatures): void => {
   const count = template.count + 1;
-  const update = (key: keyof TemplateBuilder["mean"], value: number | undefined) => {
+  const update = (key: NumericTemplateMeanKey, value: number | undefined) => {
     if (value === undefined) return;
     const current = template.mean[key] as number | undefined;
-    template.mean[key] =
-      current === undefined ? value : (current * template.count + value) / count;
+    template.mean[key] = current === undefined ? value : (current * template.count + value) / count;
   };
 
   update("columnCount", page.columnCount);
@@ -900,7 +899,10 @@ const clusterPageTemplates = (
       pageType: template.pageType,
       pageIds: template.pageIds,
       margins: template.mean.margins,
-      columns: { count: Math.max(1, Math.round(template.mean.columnCount)), valleyRatio: template.mean.columnValleyRatio },
+      columns: {
+        count: Math.max(1, Math.round(template.mean.columnCount)),
+        valleyRatio: template.mean.columnValleyRatio,
+      },
       headBand: { ratio: template.mean.headBandRatio },
       footerBand: { ratio: template.mean.footerBandRatio },
       baseline: {
@@ -911,8 +913,7 @@ const clusterPageTemplates = (
       ornamentHashes: Array.from(template.ornamentHashes),
       textDensity: template.mean.textDensity,
       whitespaceRatio: template.mean.whitespaceRatio,
-      confidence:
-        template.count > 0 ? clamp01(template.confidenceSum / template.count) : 0,
+      confidence: template.count > 0 ? clamp01(template.confidenceSum / template.count) : 0,
     }));
 
   const activeTemplateIds = new Set(finalTemplates.map((template) => template.id));
@@ -952,9 +953,7 @@ const BASELINE_GRID_MAX_MAD_RATIO = 0.35;
 const BASELINE_GRID_MIN_SHARPNESS = 0.25;
 
 const isTextDominantProfile = (profile: LayoutProfile): boolean =>
-  ["body", "chapter-opening", "front-matter", "back-matter", "appendix", "index"].includes(
-    profile
-  );
+  ["body", "chapter-opening", "front-matter", "back-matter", "appendix", "index"].includes(profile);
 
 const computeBaselineGridData = (
   baseline: BaselineMetrics | undefined,
@@ -2037,9 +2036,7 @@ const applySpreadSplitIfEnabled = async (
       if (splitResult) {
         splitPages.push(...splitResult.pages);
         splitResult.gutterByPageId.forEach((value, key) => gutterByPageId.set(key, value));
-        splitResult.spreadMetaByPageId.forEach((value, key) =>
-          spreadMetaByPageId.set(key, value)
-        );
+        splitResult.spreadMetaByPageId.forEach((value, key) => spreadMetaByPageId.set(key, value));
         continue;
       }
     }
@@ -2318,7 +2315,9 @@ const savePipelineOutputs = async (params: {
         normalizedFile: path.basename(norm.normalizedPath),
         previews: [
           norm.previews?.source?.path ? path.basename(norm.previews.source.path) : undefined,
-          norm.previews?.normalized?.path ? path.basename(norm.previews.normalized.path) : undefined,
+          norm.previews?.normalized?.path
+            ? path.basename(norm.previews.normalized.path)
+            : undefined,
         ].filter(Boolean),
         spread,
         stages: {
@@ -2864,6 +2863,7 @@ export async function runPipeline(options: PipelineRunnerOptions): Promise<Pipel
 
     const pipelineResult: PipelineRunResult = {
       runId,
+      runDir,
       status: "success",
       pagesProcessed: configToProcess.pages.length,
       errors: [],
@@ -2956,6 +2956,7 @@ export async function runPipeline(options: PipelineRunnerOptions): Promise<Pipel
 
     const pipelineResult: PipelineRunResult = {
       runId,
+      runDir,
       status: isCancelled ? "cancelled" : "error",
       pagesProcessed: normalizationResults.size,
       errors: errors.map((e) => ({ pageId: e.phase, message: e.message })),
@@ -3033,10 +3034,7 @@ const writeSidecars = async (
   spreadMetaByPageId?: Map<string, SpreadMetadata>,
   control?: RunControl
 ): Promise<
-  Map<
-    string,
-    { profile: LayoutProfile; confidence: number; elementCount: number; source: string }
-  >
+  Map<string, { profile: LayoutProfile; confidence: number; elementCount: number; source: string }>
 > => {
   const sidecarDir = getSidecarDir(runDir);
   await fs.mkdir(sidecarDir, { recursive: true });
@@ -3054,142 +3052,148 @@ const writeSidecars = async (
   const sidecarEntries = (
     await Promise.all(
       config.pages.map(async (page, index) => {
-      await waitForControl(control);
-      const estimate = estimatesById.get(page.id);
-      const norm = normalization.get(page.id);
-      if (!estimate || !norm) return;
+        await waitForControl(control);
+        const estimate = estimatesById.get(page.id);
+        const norm = normalization.get(page.id);
+        if (!estimate || !norm) return;
 
-      const bleedMm = norm.bleedMm;
-      const trimMm = norm.trimMm;
-      const assessment = inferLayoutProfile(page, index, norm, config.pages.length);
-      const layoutConfidence = computeLayoutConfidence(assessment, norm);
-      const deskewConfidence = Math.min(1, norm.stats.skewConfidence + 0.25);
-      const maskBoxOut = mapBoxToOutput(norm.maskBox, norm.cropBox, outputWidth, outputHeight);
-      const cropBoxOut: [number, number, number, number] = [
-        0,
-        0,
-        outputWidth - 1,
-        outputHeight - 1,
-      ];
-      const cropWidth = Math.max(1, norm.cropBox[2] - norm.cropBox[0] + 1);
-      const scale = outputWidth / cropWidth;
-      const localElements = buildElementBoxes(
-        page.id,
-        outputWidth,
-        outputHeight,
-        maskBoxOut,
-        bookModel
-      );
-      const remoteElements = await requestRemoteLayout(
-        page.id,
-        norm.normalizedPath,
-        outputWidth,
-        outputHeight
-      );
-      const nativeElements = remoteElements
-        ? null
-        : await loadNativeLayoutElements(page.id, norm.normalizedPath, native);
-      const elements = remoteElements ?? nativeElements ?? localElements;
-      const layoutSource = remoteElements ? "remote" : nativeElements ? "native" : "local";
-      layoutSummaries.set(page.id, {
-        profile: assessment.profile,
-        confidence: layoutConfidence,
-        elementCount: elements.length,
-        source: layoutSource,
-      });
+        const bleedMm = norm.bleedMm;
+        const trimMm = norm.trimMm;
+        const assessment = inferLayoutProfile(page, index, norm, config.pages.length);
+        const layoutConfidence = computeLayoutConfidence(assessment, norm);
+        const deskewConfidence = Math.min(1, norm.stats.skewConfidence + 0.25);
+        const maskBoxOut = mapBoxToOutput(norm.maskBox, norm.cropBox, outputWidth, outputHeight);
+        const cropBoxOut: [number, number, number, number] = [
+          0,
+          0,
+          outputWidth - 1,
+          outputHeight - 1,
+        ];
+        const cropWidth = Math.max(1, norm.cropBox[2] - norm.cropBox[0] + 1);
+        const scale = outputWidth / cropWidth;
+        const localElements = buildElementBoxes(
+          page.id,
+          outputWidth,
+          outputHeight,
+          maskBoxOut,
+          bookModel
+        );
+        const remoteElements = await requestRemoteLayout(
+          page.id,
+          norm.normalizedPath,
+          outputWidth,
+          outputHeight
+        );
+        const nativeElements = remoteElements
+          ? null
+          : await loadNativeLayoutElements(page.id, norm.normalizedPath, native);
+        const elements = remoteElements ?? nativeElements ?? localElements;
+        const layoutSource = remoteElements ? "remote" : nativeElements ? "native" : "local";
+        layoutSummaries.set(page.id, {
+          profile: assessment.profile,
+          confidence: layoutConfidence,
+          elementCount: elements.length,
+          source: layoutSource,
+        });
 
-      const baselineLineCount = norm.corrections?.baseline?.textLineCount ?? 0;
-      const baselineData = computeBaselineGridData(norm.corrections?.baseline, outputHeight);
-      const cropHeight = Math.max(1, norm.cropBox[3] - norm.cropBox[1] + 1);
-      const fallbackSpacingPx =
-        baselineLineCount > 0 ? cropHeight / baselineLineCount : undefined;
-      const medianSpacingPx = baselineData.spacingPx ?? fallbackSpacingPx;
-      const lineStraightnessResidual = Math.abs(norm.corrections?.baseline?.residualAngle ?? 0);
-      const baselineSummary = {
-        medianSpacingPx,
-        spacingMAD: baselineData.spacingMADPx,
-        lineStraightnessResidual,
-        confidence: norm.corrections?.baseline?.confidence ?? norm.stats.baselineConsistency ?? 0.5,
-        peaksY: baselineData.peaksY,
-      };
-      const baselineGridGuide: BaselineGridGuide | undefined = shouldRenderBaselineGrid(
-        assessment.profile,
-        baselineData
-      )
-        ? {
-            spacingPx: baselineData.spacingPx,
-            offsetPx: baselineData.offsetPx,
-            angleDeg: baselineData.angleDeg,
-            confidence: baselineData.confidence,
-            source: "auto",
-          }
-        : undefined;
-      const spread = resolveSpreadMetadata(page.id, spreadMetaByPageId, gutterByPageId);
-
-      const textFeatures = computeTextFeatures({
-        elements,
-        maskBox: maskBoxOut,
-        width: outputWidth,
-        height: outputHeight,
-      });
-      const folioBandScore = computeFolioBandScore(elements, bookModel?.folioModel, outputHeight);
-      const ornamentHash = norm.normalizedPath
-        ? await hashBand(norm.normalizedPath, ORNAMENT_BAND)
-        : null;
-      const ornamentHashes =
-        ornamentHash && ornamentHash.variance >= ornamentVarianceMin ? [ornamentHash.hash] : [];
-      const gutterSignature =
-        spread?.gutter && spread.gutter.startRatio !== undefined && spread.gutter.endRatio !== undefined
-          ? (spread.gutter.startRatio + spread.gutter.endRatio) / 2
+        const baselineLineCount = norm.corrections?.baseline?.textLineCount ?? 0;
+        const baselineData = computeBaselineGridData(norm.corrections?.baseline, outputHeight);
+        const cropHeight = Math.max(1, norm.cropBox[3] - norm.cropBox[1] + 1);
+        const fallbackSpacingPx =
+          baselineLineCount > 0 ? cropHeight / baselineLineCount : undefined;
+        const medianSpacingPx = baselineData.spacingPx ?? fallbackSpacingPx;
+        const lineStraightnessResidual = Math.abs(norm.corrections?.baseline?.residualAngle ?? 0);
+        const baselineSummary = {
+          medianSpacingPx,
+          spacingMAD: baselineData.spacingMADPx,
+          lineStraightnessResidual,
+          confidence:
+            norm.corrections?.baseline?.confidence ?? norm.stats.baselineConsistency ?? 0.5,
+          peaksY: baselineData.peaksY,
+        };
+        const baselineGridGuide: BaselineGridGuide | undefined = shouldRenderBaselineGrid(
+          assessment.profile,
+          baselineData
+        )
+          ? {
+              spacingPx: baselineData.spacingPx,
+              offsetPx: baselineData.offsetPx,
+              angleDeg: baselineData.angleDeg,
+              confidence: baselineData.confidence,
+              source: "auto",
+            }
           : undefined;
-      const baselineSpacingRatio =
-        baselineSummary.medianSpacingPx !== undefined
-          ? baselineSummary.medianSpacingPx / Math.max(1, outputHeight)
-          : undefined;
-      const margins = {
-        top: clamp01(textFeatures.contentBox[1] / Math.max(1, outputHeight)),
-        right: clamp01((outputWidth - 1 - textFeatures.contentBox[2]) / Math.max(1, outputWidth)),
-        bottom: clamp01((outputHeight - 1 - textFeatures.contentBox[3]) / Math.max(1, outputHeight)),
-        left: clamp01(textFeatures.contentBox[0] / Math.max(1, outputWidth)),
-      };
+        const spread = resolveSpreadMetadata(page.id, spreadMetaByPageId, gutterByPageId);
 
-      const templateFeatures: PageTemplateFeatures = {
-        pageId: page.id,
-        pageType: assessment.profile,
-        margins,
-        columnCount: textFeatures.columnCount,
-        columnValleyRatio: textFeatures.columnValleyRatio,
-        headBandRatio: textFeatures.headBandRatio,
-        footerBandRatio: textFeatures.footerBandRatio,
-        folioBandScore,
-        ornamentHashes,
-        textDensity: textFeatures.textDensity,
-        whitespaceRatio: textFeatures.whitespaceRatio,
-        baselineConsistency: norm.stats.baselineConsistency,
-        baselineSpacingPx: baselineSummary.medianSpacingPx,
-        baselineSpacingRatio,
-        gutterSignature,
-      };
+        const textFeatures = computeTextFeatures({
+          elements,
+          maskBox: maskBoxOut,
+          width: outputWidth,
+          height: outputHeight,
+        });
+        const folioBandScore = computeFolioBandScore(elements, bookModel?.folioModel, outputHeight);
+        const ornamentHash = norm.normalizedPath
+          ? await hashBand(norm.normalizedPath, ORNAMENT_BAND)
+          : null;
+        const ornamentHashes =
+          ornamentHash && ornamentHash.variance >= ornamentVarianceMin ? [ornamentHash.hash] : [];
+        const gutterSignature =
+          spread?.gutter &&
+          spread.gutter.startRatio !== undefined &&
+          spread.gutter.endRatio !== undefined
+            ? (spread.gutter.startRatio + spread.gutter.endRatio) / 2
+            : undefined;
+        const baselineSpacingRatio =
+          baselineSummary.medianSpacingPx !== undefined
+            ? baselineSummary.medianSpacingPx / Math.max(1, outputHeight)
+            : undefined;
+        const margins = {
+          top: clamp01(textFeatures.contentBox[1] / Math.max(1, outputHeight)),
+          right: clamp01((outputWidth - 1 - textFeatures.contentBox[2]) / Math.max(1, outputWidth)),
+          bottom: clamp01(
+            (outputHeight - 1 - textFeatures.contentBox[3]) / Math.max(1, outputHeight)
+          ),
+          left: clamp01(textFeatures.contentBox[0] / Math.max(1, outputWidth)),
+        };
 
-      return {
-        page,
-        norm,
-        assessment,
-        layoutConfidence,
-        deskewConfidence,
-        outputWidth,
-        outputHeight,
-        maskBoxOut,
-        cropBoxOut,
-        scale,
-        bleedMm,
-        trimMm,
-        elements,
-        baselineSummary,
-        spread,
-        templateFeatures,
-      };
-    })
+        const templateFeatures: PageTemplateFeatures = {
+          pageId: page.id,
+          pageType: assessment.profile,
+          margins,
+          columnCount: textFeatures.columnCount,
+          columnValleyRatio: textFeatures.columnValleyRatio,
+          headBandRatio: textFeatures.headBandRatio,
+          footerBandRatio: textFeatures.footerBandRatio,
+          folioBandScore,
+          ornamentHashes,
+          textDensity: textFeatures.textDensity,
+          whitespaceRatio: textFeatures.whitespaceRatio,
+          baselineConsistency: norm.stats.baselineConsistency,
+          baselineSpacingPx: baselineSummary.medianSpacingPx,
+          baselineSpacingRatio,
+          gutterSignature,
+        };
+
+        return {
+          page,
+          norm,
+          assessment,
+          layoutConfidence,
+          deskewConfidence,
+          outputWidth,
+          outputHeight,
+          maskBoxOut,
+          cropBoxOut,
+          scale,
+          bleedMm,
+          trimMm,
+          elements,
+          baselineSummary,
+          baselineGridGuide,
+          spread,
+          templateFeatures,
+        };
+      })
     )
   ).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
@@ -3200,7 +3204,10 @@ const writeSidecars = async (
   };
   const templatesEnabled = pipelineConfig?.templates?.enabled ?? false;
   const templateResult = templatesEnabled
-    ? clusterPageTemplates(sidecarEntries.map((entry) => entry.templateFeatures), templateConfig)
+    ? clusterPageTemplates(
+        sidecarEntries.map((entry) => entry.templateFeatures),
+        templateConfig
+      )
     : { templates: [], assignments: [] };
   const assignmentByPageId = new Map(
     templateResult.assignments.map((assignment) => [assignment.pageId, assignment])
@@ -3249,7 +3256,7 @@ const writeSidecars = async (
                 confidence: entry.norm.shading.confidence,
               }
             : undefined,
-          guides: baselineGridGuide ? { baselineGrid: baselineGridGuide } : undefined,
+          guides: entry.baselineGridGuide ? { baselineGrid: entry.baselineGridGuide } : undefined,
         },
         elements: entry.elements,
         overrides: {},

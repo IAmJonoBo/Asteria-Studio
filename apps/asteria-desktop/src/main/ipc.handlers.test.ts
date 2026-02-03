@@ -7,6 +7,7 @@ const readFile = vi.hoisted(() => vi.fn());
 const mkdir = vi.hoisted(() => vi.fn());
 const writeFile = vi.hoisted(() => vi.fn());
 const copyFile = vi.hoisted(() => vi.fn());
+const cp = vi.hoisted(() => vi.fn());
 const readdir = vi.hoisted(() => vi.fn());
 const rm = vi.hoisted(() => vi.fn());
 const rename = vi.hoisted(() => vi.fn());
@@ -28,11 +29,12 @@ vi.mock("electron", () => ({
 }));
 
 vi.mock("node:fs/promises", () => ({
-  default: { readFile, mkdir, writeFile, copyFile, readdir, rm, rename },
+  default: { readFile, mkdir, writeFile, copyFile, cp, readdir, rm, rename },
   readFile,
   mkdir,
   writeFile,
   copyFile,
+  cp,
   readdir,
   rm,
   rename,
@@ -71,6 +73,7 @@ describe("IPC handler registration", () => {
     mkdir.mockReset();
     writeFile.mockReset();
     copyFile.mockReset();
+    cp.mockReset();
     readdir.mockReset();
     rm.mockReset();
     rename.mockReset();
@@ -300,7 +303,6 @@ describe("IPC handler registration", () => {
     const runDir = getRunDir(outputDir, "run-2");
     readdir
       .mockResolvedValueOnce(["page-1.json"])
-      .mockResolvedValueOnce(["signal-1.json"])
       .mockResolvedValueOnce(["page1.png", "page2.png", "notes.txt"]);
 
     await (
@@ -336,10 +338,9 @@ describe("IPC handler registration", () => {
       path.join(sidecarDir, "page-1.json"),
       path.join(exportDir, "sidecars", "page-1.json")
     );
-    expect(copyFile).toHaveBeenCalledWith(
-      path.join(trainingDir, "signal-1.json"),
-      path.join(exportDir, "training", "signal-1.json")
-    );
+    expect(cp).toHaveBeenCalledWith(trainingDir, path.join(exportDir, "training"), {
+      recursive: true,
+    });
     expect(sharpCall.tiff).toHaveBeenCalledTimes(2);
     expect(sharpCall.toFormat).toHaveBeenCalledTimes(2);
     expect(sharpCall.toFormat).toHaveBeenCalledWith("pdf");
@@ -354,12 +355,7 @@ describe("IPC handler registration", () => {
 
     const runDir = getRunDir(path.join(process.cwd(), "pipeline-results"), "run-1");
     const result = await (
-      handler as (
-        event: unknown,
-        runId: string,
-        runDir: string,
-        pageId: string
-      ) => Promise<unknown>
+      handler as (event: unknown, runId: string, runDir: string, pageId: string) => Promise<unknown>
     )({}, "run-1", runDir, "p99");
 
     expect(result).toMatchObject({ id: "p99", filename: "page-p99.png" });
@@ -373,12 +369,7 @@ describe("IPC handler registration", () => {
 
     const runDir = getRunDir(path.join(process.cwd(), "pipeline-results"), "run-1");
     const result = await (
-      handler as (
-        event: unknown,
-        runId: string,
-        runDir: string,
-        pageId: string
-      ) => Promise<unknown>
+      handler as (event: unknown, runId: string, runDir: string, pageId: string) => Promise<unknown>
     )({}, "run-1", runDir, "p1");
 
     expect(result).toMatchObject({ id: "p1", filename: "page.png" });
@@ -393,12 +384,7 @@ describe("IPC handler registration", () => {
 
     const runDir = getRunDir(path.join(process.cwd(), "pipeline-results"), "run-1");
     const result = await (
-      handler as (
-        event: unknown,
-        runId: string,
-        runDir: string,
-        pageId: string
-      ) => Promise<unknown>
+      handler as (event: unknown, runId: string, runDir: string, pageId: string) => Promise<unknown>
     )({}, "run-1", runDir, "p1");
 
     expect(result).toMatchObject({ id: "p1", filename: "p1" });
@@ -414,12 +400,7 @@ describe("IPC handler registration", () => {
 
     const runDir = getRunDir(path.join(process.cwd(), "pipeline-results"), "run-9");
     const result = await (
-      handler as (
-        event: unknown,
-        runId: string,
-        runDir: string,
-        pageId: string
-      ) => Promise<unknown>
+      handler as (event: unknown, runId: string, runDir: string, pageId: string) => Promise<unknown>
     )({}, "run-9", runDir, "p1");
 
     expect(result).toMatchObject({ pageId: "p1" });
@@ -435,12 +416,7 @@ describe("IPC handler registration", () => {
     const outputDir = path.join(process.cwd(), "pipeline-results");
     const runDir = getRunDir(outputDir, "run-miss");
     const result = await (
-      handler as (
-        event: unknown,
-        runId: string,
-        runDir: string,
-        pageId: string
-      ) => Promise<unknown>
+      handler as (event: unknown, runId: string, runDir: string, pageId: string) => Promise<unknown>
     )({}, "run-miss", runDir, "p3");
 
     expect(result).toBeNull();
@@ -517,15 +493,20 @@ describe("IPC handler registration", () => {
 
     // Check that writeFile was called with updated sidecar
     const writeFileCalls = writeFile.mock.calls;
-    const sidecarWriteCall = writeFileCalls.find((call) => 
-      typeof call[1] === "string" && call[1].includes('"overrideAppliedAt"')
+    const sidecarWriteCall = writeFileCalls.find(
+      (call) => typeof call[1] === "string" && call[1].includes('"overrideAppliedAt"')
     );
     expect(sidecarWriteCall).toBeDefined();
-    
+
     const writtenData = JSON.parse(sidecarWriteCall![1] as string);
-    expect(writtenData.decisions.overrides).toEqual(["normalization.rotationDeg", "normalization.cropBox"]);
+    expect(writtenData.decisions.overrides).toEqual([
+      "normalization.rotationDeg",
+      "normalization.cropBox",
+    ]);
     expect(writtenData.decisions.overrideAppliedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(writtenData.overrides).toEqual({ normalization: { rotationDeg: 1.5, cropBox: [0, 0, 150, 150] } });
+    expect(writtenData.overrides).toEqual({
+      normalization: { rotationDeg: 1.5, cropBox: [0, 0, 150, 150] },
+    });
   });
 
   it("apply-override updates manifest with per-page overrides and overrideAppliedAt", async () => {
@@ -558,7 +539,7 @@ describe("IPC handler registration", () => {
 
     // Check that writeFile was called (writeJsonAtomic uses writeFile internally)
     expect(writeFile).toHaveBeenCalled();
-    
+
     // Find a writeFile call that looks like it's writing JSON with the pages structure
     const jsonWriteCalls = writeFile.mock.calls.filter((call) => {
       if (typeof call[1] !== "string") return false;
@@ -569,9 +550,9 @@ describe("IPC handler registration", () => {
         return false;
       }
     });
-    
+
     expect(jsonWriteCalls.length).toBeGreaterThan(0);
-    
+
     // Parse the manifest write and verify it has the expected structure
     const manifestData = JSON.parse(jsonWriteCalls[jsonWriteCalls.length - 1][1] as string);
     expect(manifestData.pages).toHaveLength(3);
@@ -641,8 +622,8 @@ describe("IPC handler registration", () => {
 
     // Check sidecar was written
     const writeFileCalls = writeFile.mock.calls;
-    const sidecarWriteCall = writeFileCalls.find((call) => 
-      typeof call[1] === "string" && call[1].includes('"overrideAppliedAt"')
+    const sidecarWriteCall = writeFileCalls.find(
+      (call) => typeof call[1] === "string" && call[1].includes('"overrideAppliedAt"')
     );
     expect(sidecarWriteCall).toBeDefined();
   });
@@ -673,8 +654,8 @@ describe("IPC handler registration", () => {
 
     // Manifest should not be updated (no writeFile call with the manifest content)
     const writeFileCalls = writeFile.mock.calls;
-    const manifestWriteCall = writeFileCalls.find((call) => 
-      typeof call[1] === "string" && call[1].includes('"pages":"not-an-array"')
+    const manifestWriteCall = writeFileCalls.find(
+      (call) => typeof call[1] === "string" && call[1].includes('"pages":"not-an-array"')
     );
     expect(manifestWriteCall).toBeUndefined();
   });
@@ -803,8 +784,283 @@ describe("IPC handler registration", () => {
     const outputDir = path.join(process.cwd(), "pipeline-results");
     const runDir = getRunDir(outputDir, "run-3");
     await (
-      handler as (event: unknown, runId: string, runDir: string, decisions: unknown[]) => Promise<void>
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
     )({}, "run-3", runDir, [{ pageId: "p1", decision: "accept" }]);
+  });
+
+  it("submit-review creates training directory structure", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-1");
+    const trainingDir = path.join(runDir, "training");
+    const trainingPageDir = path.join(trainingDir, "page");
+    const trainingTemplateDir = path.join(trainingDir, "template");
+
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-1", runDir, [{ pageId: "page1", decision: "accept" }]);
+
+    expect(mkdir).toHaveBeenCalledWith(path.join(runDir, "reviews"), { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith(trainingPageDir, { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith(trainingTemplateDir, { recursive: true });
+  });
+
+  it("submit-review writes per-page training records with all fields", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar = {
+      pageId: "page1",
+      normalization: { cropBox: [0, 0, 100, 100] },
+      elements: [{ type: "text", bbox: [10, 10, 50, 50] }],
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile.mockResolvedValueOnce(
+      JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+    ); // report read
+    readFile.mockResolvedValueOnce(JSON.stringify(sidecar)); // sidecar read
+    readFile.mockRejectedValueOnce(new Error("no override")); // override read (fails)
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-2");
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-2", runDir, [{ pageId: "page1", decision: "accept", notes: "looks good" }]);
+
+    const writeCall = writeFile.mock.calls.find(
+      (call) => String(call[0]).includes("training/page") && String(call[0]).includes("page1.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const written = JSON.parse(writeCall[1] as string);
+    expect(written).toMatchObject({
+      runId: "run-train-2",
+      pageId: "page1",
+      decision: "accept",
+      notes: "looks good",
+      confirmed: true,
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      templateIds: ["template1"],
+      sidecarPath: "sidecars/page1.json",
+    });
+    expect(written.timestamps).toHaveProperty("submittedAt");
+    expect(written.timestamps).toHaveProperty("appliedAt");
+    expect(written.auto).toHaveProperty("normalization");
+    expect(written.auto).toHaveProperty("elements");
+    expect(written.final).toHaveProperty("normalization");
+  });
+
+  it("submit-review writes per-template training records with page linkage", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar1 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar2 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar1)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar2)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page2 override (fails)
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-3");
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-3", runDir, [
+      { pageId: "page1", decision: "accept" },
+      { pageId: "page2", decision: "accept" },
+    ]);
+
+    const writeCall = writeFile.mock.calls.find(
+      (call) =>
+        String(call[0]).includes("training/template") && String(call[0]).includes("template1.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const written = JSON.parse(writeCall[1] as string);
+    expect(written).toMatchObject({
+      runId: "run-train-3",
+      templateId: "template1",
+      confirmed: true,
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      pages: expect.arrayContaining(["page1", "page2"]),
+      confirmedPages: expect.arrayContaining(["page1", "page2"]),
+    });
+  });
+
+  it("submit-review writes training manifest with counts", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page2 override (fails)
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-4");
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-4", runDir, [
+      { pageId: "page1", decision: "accept" },
+      { pageId: "page2", decision: "reject" },
+    ]);
+
+    const writeCall = writeFile.mock.calls.find(
+      (call) => String(call[0]).includes("training") && String(call[0]).includes("manifest.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const manifest = JSON.parse(writeCall[1] as string);
+    expect(manifest).toMatchObject({
+      runId: "run-train-4",
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      counts: {
+        pages: 2,
+        templates: 1,
+      },
+    });
+    expect(manifest.pages).toHaveLength(2);
+    expect(manifest.templates).toHaveLength(1);
+  });
+
+  it("submit-review uses unknown determinism when report missing", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    readFile.mockRejectedValueOnce(new Error("missing report"));
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-5");
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-5", runDir, [{ pageId: "page1", decision: "accept" }]);
+
+    const writeCall = writeFile.mock.calls.find(
+      (call) => String(call[0]).includes("training") && String(call[0]).includes("manifest.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const manifest = JSON.parse(writeCall[1] as string);
+    expect(manifest.appVersion).toBe("unknown");
+    expect(manifest.configHash).toBe("unknown");
+  });
+
+  it("submit-review template confirmed field reflects actual page decisions", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar1 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar2 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar3 = {
+      bookModel: { runningHeadTemplates: [{ id: "template2", pattern: "Page {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar1)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar2)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page2 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar3)) // page3 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page3 override (fails)
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-6");
+    await (
+      handler as (
+        event: unknown,
+        runId: string,
+        runDir: string,
+        decisions: unknown[]
+      ) => Promise<void>
+    )({}, "run-train-6", runDir, [
+      { pageId: "page1", decision: "accept" },
+      { pageId: "page2", decision: "reject" },
+      { pageId: "page3", decision: "reject" },
+    ]);
+
+    const template1Call = writeFile.mock.calls.find(
+      (call) =>
+        String(call[0]).includes("training/template") && String(call[0]).includes("template1.json")
+    );
+    expect(template1Call).toBeDefined();
+    if (!template1Call) throw new Error("template1Call not found");
+    const template1 = JSON.parse(template1Call[1] as string);
+    expect(template1.confirmed).toBe(true);
+    expect(template1.pages).toEqual(expect.arrayContaining(["page1", "page2"]));
+    expect(template1.confirmedPages).toEqual(["page1"]);
+
+    const template2Call = writeFile.mock.calls.find(
+      (call) =>
+        String(call[0]).includes("training/template") && String(call[0]).includes("template2.json")
+    );
+    expect(template2Call).toBeDefined();
+    if (!template2Call) throw new Error("template2Call not found");
+    const template2 = JSON.parse(template2Call[1] as string);
+    expect(template2.confirmed).toBe(false);
+    expect(template2.pages).toEqual(["page3"]);
+    expect(template2.confirmedPages).toEqual([]);
   });
 
   it("list-runs returns run index entries", async () => {
@@ -1027,7 +1283,9 @@ describe("IPC handler registration", () => {
     const templateDir = path.join(runDir, "training", "template");
     expect(mkdir).toHaveBeenCalledWith(templateDir, { recursive: true });
     expect(writeFile).toHaveBeenCalledWith(
-      expect.stringMatching(new RegExp(path.join(templateDir.replace(/\\/g, "\\\\"), "\\.body-.*\\.json.*\\.tmp$"))),
+      expect.stringMatching(
+        new RegExp(path.join(templateDir.replace(/\\/g, "\\\\"), "\\.body-.*\\.json.*\\.tmp$"))
+      ),
       expect.stringMatching(/"runId"\s*:\s*"run-6"/)
     );
   });
@@ -1077,7 +1335,11 @@ describe("IPC handler registration", () => {
     const runDir = getRunDir(outputDir, "run-8");
     const templateDir = path.join(runDir, "training", "template");
     expect(writeFile).toHaveBeenCalledWith(
-      expect.stringMatching(new RegExp(path.join(templateDir.replace(/\\/g, "\\\\"), "\\.body_chapter_1-.*\\.json.*\\.tmp$"))),
+      expect.stringMatching(
+        new RegExp(
+          path.join(templateDir.replace(/\\/g, "\\\\"), "\\.body_chapter_1-.*\\.json.*\\.tmp$")
+        )
+      ),
       expect.any(String)
     );
   });

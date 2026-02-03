@@ -54,7 +54,7 @@ const buildNormalization = (page: PageData): NormalizationResult => ({
   },
   corrections: {
     deskewAngle: 0.1,
-    baseline: { lineConsistency: 0.8, textLineCount: 12, residualAngle: 0.1 },
+    baseline: { lineConsistency: 0.8, textLineCount: 12, residualAngle: 0.1, peaksY: [] },
   },
 });
 

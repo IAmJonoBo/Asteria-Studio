@@ -664,6 +664,7 @@ describe("Pipeline Runner", () => {
       },
       pipelineResult: {
         runId: "run-test",
+        runDir: "/tmp/runs/run-test",
         status: "success",
         pagesProcessed: 100,
         errors: [],
@@ -716,6 +717,7 @@ describe("Pipeline Runner", () => {
       },
       pipelineResult: {
         runId: "run-metrics",
+        runDir: "/tmp/runs/run-metrics",
         status: "success",
         pagesProcessed: 120,
         errors: [],
@@ -762,6 +764,7 @@ describe("Pipeline Runner", () => {
       },
       pipelineResult: {
         runId: "run-fail",
+        runDir: "/tmp/runs/run-fail",
         status: "error",
         pagesProcessed: 0,
         errors: [{ pageId: "pipeline", message: "fail" }],
@@ -812,6 +815,7 @@ describe("Pipeline Runner", () => {
       },
       pipelineResult: {
         runId: "run-variance",
+        runDir: "/tmp/runs/run-variance",
         status: "success",
         pagesProcessed: 10,
         errors: [],
@@ -865,6 +869,7 @@ describe("Pipeline Runner", () => {
       },
       pipelineResult: {
         runId: "run-large",
+        runDir: "/tmp/runs/run-large",
         status: "success",
         pagesProcessed: 150,
         errors: [],

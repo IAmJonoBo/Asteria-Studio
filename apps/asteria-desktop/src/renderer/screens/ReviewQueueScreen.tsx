@@ -1,9 +1,15 @@
-import type { JSX, KeyboardEvent, MouseEvent, WheelEvent, MutableRefObject, PointerEvent } from "react";
+import type {
+  JSX,
+  KeyboardEvent,
+  MouseEvent,
+  WheelEvent,
+  MutableRefObject,
+  PointerEvent,
+} from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcut.js";
 import type { LayoutProfile, ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts.js";
 import { renderGuideLayers } from "../guides/registry.js";
-import type { ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts.js";
 import { snapBoxWithSources, getBoxSnapCandidates } from "../utils/snapping.js";
 import type { SnapEdge } from "../utils/snapping.js";
 
@@ -118,8 +124,7 @@ const getTemplateKey = (page?: ReviewPage): LayoutProfile => {
   if (!page.layoutProfile) {
     // Group pages without a layout profile by their reason to avoid
     // collapsing all such pages into a single "unknown" bucket.
-    const normalizedReason =
-      page.reason?.trim().toLowerCase().replace(/\s+/g, "-") || "no-reason";
+    const normalizedReason = page.reason?.trim().toLowerCase().replace(/\s+/g, "-") || "no-reason";
     return `unknown-${normalizedReason}` as LayoutProfile;
   }
 
@@ -143,10 +148,7 @@ const buildTemplateSummaries = (pages: ReviewPage[]): TemplateSummary[] => {
     const totalConfidence = groupPages.reduce((sum, page) => sum + page.confidence, 0);
     const minConfidence =
       groupPages.length > 0
-        ? groupPages.reduce(
-            (min, page) => Math.min(min, page.confidence),
-            Number.POSITIVE_INFINITY
-          )
+        ? groupPages.reduce((min, page) => Math.min(min, page.confidence), Number.POSITIVE_INFINITY)
         : 0;
     const issueCounts = new Map<string, number>();
     groupPages.forEach((page) => {
@@ -259,6 +261,8 @@ const getIpcChannel = <TArgs extends unknown[], TReturn>(
   const channel = windowRef.asteria?.ipc?.[channelName];
   if (!channel) return undefined;
   return channel as (...args: TArgs) => Promise<TReturn>;
+};
+
 type SnapGuideLine = {
   axis: "x" | "y";
   value: number;
@@ -305,23 +309,16 @@ const buildBaselineGridOverrides = (
       ? (guides.baselineGrid as Record<string, unknown> | null)
       : null;
 
-  const overrideSpacing = baselineGrid && isFiniteNumber(baselineGrid.spacingPx)
-    ? baselineGrid.spacingPx
-    : null;
-  const overrideOffset = baselineGrid && isFiniteNumber(baselineGrid.offsetPx)
-    ? baselineGrid.offsetPx
-    : null;
-  const overrideAngle = baselineGrid && isFiniteNumber(baselineGrid.angleDeg)
-    ? baselineGrid.angleDeg
-    : null;
+  const overrideSpacing =
+    baselineGrid && isFiniteNumber(baselineGrid.spacingPx) ? baselineGrid.spacingPx : null;
+  const overrideOffset =
+    baselineGrid && isFiniteNumber(baselineGrid.offsetPx) ? baselineGrid.offsetPx : null;
+  const overrideAngle =
+    baselineGrid && isFiniteNumber(baselineGrid.angleDeg) ? baselineGrid.angleDeg : null;
   const overrideSnap =
-    baselineGrid && typeof baselineGrid.snapToPeaks === "boolean"
-      ? baselineGrid.snapToPeaks
-      : null;
+    baselineGrid && typeof baselineGrid.snapToPeaks === "boolean" ? baselineGrid.snapToPeaks : null;
   const overrideCorrect =
-    baselineGrid && typeof baselineGrid.markCorrect === "boolean"
-      ? baselineGrid.markCorrect
-      : null;
+    baselineGrid && typeof baselineGrid.markCorrect === "boolean" ? baselineGrid.markCorrect : null;
 
   const autoSpacing =
     sidecar?.bookModel?.baselineGrid?.dominantSpacingPx ??
@@ -416,11 +413,7 @@ const createZoomBy =
     setZoom((prev) => Math.min(4, Math.max(0.5, Number((prev + delta).toFixed(2)))));
   };
 
-const clampBox = (
-  box: Box,
-  bounds: Box,
-  minSize = 12
-): Box => {
+const clampBox = (box: Box, bounds: Box, minSize = 12): Box => {
   const [minX, minY, maxX, maxY] = bounds;
   let [x0, y0, x1, y1] = box;
 
@@ -474,7 +467,12 @@ const clampBox = (
   return [Math.round(x0), Math.round(y0), Math.round(x1), Math.round(y1)];
 };
 
-const applyHandleDrag = (box: Box, handle: OverlayHandleEdge, deltaX: number, deltaY: number): Box => {
+const applyHandleDrag = (
+  box: Box,
+  handle: OverlayHandleEdge,
+  deltaX: number,
+  deltaY: number
+): Box => {
   const [x0, y0, x1, y1] = box;
   switch (handle) {
     case "left":
@@ -499,7 +497,12 @@ const applyHandleDrag = (box: Box, handle: OverlayHandleEdge, deltaX: number, de
 };
 
 type SnapGuidesState = {
-  guides: Array<{ axis: "x" | "y"; value: number; edge: "left" | "right" | "top" | "bottom"; label?: string }>;
+  guides: Array<{
+    axis: "x" | "y";
+    value: number;
+    edge: "left" | "right" | "top" | "bottom";
+    label?: string;
+  }>;
   active: boolean;
   tooltip: string | null;
 };
@@ -749,7 +752,9 @@ const useReviewQueuePages = (runId?: string, runDir?: string): ReviewPage[] => {
     let cancelled = false;
     const loadQueue = async (): Promise<void> => {
       const windowRef: typeof globalThis & {
-        asteria?: { ipc?: { [key: string]: (runId: string, runDir: string) => Promise<ReviewQueue> } };
+        asteria?: {
+          ipc?: { [key: string]: (runId: string, runDir: string) => Promise<ReviewQueue> };
+        };
       } = globalThis;
       if (!runId || !runDir || !windowRef.asteria?.ipc) {
         if (!cancelled) setPages([]);
@@ -937,7 +942,10 @@ type OverlayRenderParams = {
   showSnapGuides: boolean;
   snapTooltip: string | null;
   overlaySvgRef: MutableRefObject<globalThis.SVGSVGElement | null>;
-  onHandlePointerDown: (event: PointerEvent<globalThis.SVGCircleElement>, handle: OverlayHandle) => void;
+  onHandlePointerDown: (
+    event: PointerEvent<globalThis.SVGCircleElement>,
+    handle: OverlayHandle
+  ) => void;
 };
 
 const buildOverlaySvg = ({
@@ -989,7 +997,8 @@ const buildOverlaySvg = ({
   const pageMask = sidecar.normalization?.pageMask;
   const handleSize = 6;
   const handles: Array<{ key: string; x: number; y: number; edge: OverlayHandleEdge }> = [];
-  const activeBox = adjustmentMode === "crop" ? cropBox : adjustmentMode === "trim" ? trimBox : null;
+  const activeBox =
+    adjustmentMode === "crop" ? cropBox : adjustmentMode === "trim" ? trimBox : null;
   if (activeBox) {
     const [x0, y0, x1, y1] = activeBox;
     const midX = (x0 + x1) / 2;
@@ -1190,6 +1199,16 @@ type ReviewQueueLayoutProps = {
   submitError: string | null;
   canSubmit: boolean;
   adjustmentMode: AdjustmentMode;
+  baselineSpacingPx: number | null;
+  baselineOffsetPx: number | null;
+  baselineAngleDeg: number | null;
+  baselineSnapToPeaks: boolean;
+  baselineMarkCorrect: boolean;
+  setBaselineSpacingPx: (value: number | null) => void;
+  setBaselineOffsetPx: (value: number | null) => void;
+  setBaselineAngleDeg: (value: number | null) => void;
+  setBaselineSnapToPeaks: (value: boolean) => void;
+  setBaselineMarkCorrect: (value: boolean) => void;
   cropBox: Box | null;
   trimBox: Box | null;
   isApplyingOverride: boolean;
@@ -1256,8 +1275,18 @@ const ReviewQueueLayout = ({
   submitError,
   canSubmit,
   adjustmentMode,
-  cropBox,
-  trimBox,
+  baselineSpacingPx,
+  baselineOffsetPx,
+  baselineAngleDeg,
+  baselineSnapToPeaks,
+  baselineMarkCorrect,
+  setBaselineSpacingPx,
+  setBaselineOffsetPx,
+  setBaselineAngleDeg,
+  setBaselineSnapToPeaks,
+  setBaselineMarkCorrect,
+  cropBox: _cropBox,
+  trimBox: _trimBox,
   isApplyingOverride,
   overrideError,
   lastOverrideAppliedAt,
@@ -1751,7 +1780,11 @@ const ReviewQueueLayout = ({
                         onClick={() => onApplyScopeChange(scope)}
                         tabIndex={applyScope === scope ? 0 : -1}
                       >
-                        {scope === "page" ? "This page" : scope === "section" ? "Section" : "Template"}
+                        {scope === "page"
+                          ? "This page"
+                          : scope === "section"
+                            ? "Section"
+                            : "Template"}
                       </button>
                     ))}
                   </div>
@@ -1763,7 +1796,9 @@ const ReviewQueueLayout = ({
                     {applyScope === "section" ? " in contiguous block" : ""}
                   </span>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
+                >
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={onApplyOverride}
@@ -1806,12 +1841,16 @@ const ReviewQueueLayout = ({
                     }}
                   >
                     <div style={{ fontWeight: 600, fontSize: "13px" }}>{templateSummary.label}</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                    <div
+                      style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}
+                    >
                       {templateSummary.pages.length} pages • Avg{" "}
                       {(templateSummary.averageConfidence * 100).toFixed(0)}% confidence • Min{" "}
                       {(templateSummary.minConfidence * 100).toFixed(0)}%
                     </div>
-                    <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                    <div
+                      style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}
+                    >
                       Guide coverage: {(templateSummary.guideCoverage * 100).toFixed(0)}%
                     </div>
                     <div style={{ marginTop: "6px", fontSize: "12px" }}>
@@ -1831,9 +1870,16 @@ const ReviewQueueLayout = ({
                     <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "6px" }}>
                       Representative pages (guides overlay)
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 150px))", gap: "8px" }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(120px, 150px))",
+                        gap: "8px",
+                      }}
+                    >
                       {representativePages.map((page) => {
-                        const preview = page.previews.overlay ?? page.previews.normalized ?? page.previews.source;
+                        const preview =
+                          page.previews.overlay ?? page.previews.normalized ?? page.previews.source;
                         const previewSrc = resolvePreviewSrc(preview);
                         return (
                           <div
@@ -1856,7 +1902,13 @@ const ReviewQueueLayout = ({
                                 No preview
                               </div>
                             )}
-                            <div style={{ fontSize: "10px", color: "var(--text-tertiary)", marginTop: "4px" }}>
+                            <div
+                              style={{
+                                fontSize: "10px",
+                                color: "var(--text-tertiary)",
+                                marginTop: "4px",
+                              }}
+                            >
                               {page.filename}
                             </div>
                           </div>
@@ -1889,7 +1941,9 @@ const ReviewQueueLayout = ({
                       onChange={(event) => {
                         const value = event.target.value;
                         const parsed = Number(value);
-                        setBaselineSpacingPx(value === "" || !Number.isFinite(parsed) ? null : parsed);
+                        setBaselineSpacingPx(
+                          value === "" || !Number.isFinite(parsed) ? null : parsed
+                        );
                       }}
                     />
                   </label>
@@ -1902,7 +1956,9 @@ const ReviewQueueLayout = ({
                       onChange={(event) => {
                         const value = event.target.value;
                         const parsed = Number(value);
-                        setBaselineOffsetPx(value === "" || !Number.isFinite(parsed) ? null : parsed);
+                        setBaselineOffsetPx(
+                          value === "" || !Number.isFinite(parsed) ? null : parsed
+                        );
                       }}
                     />
                   </label>
@@ -1915,7 +1971,9 @@ const ReviewQueueLayout = ({
                       onChange={(event) => {
                         const value = event.target.value;
                         const parsed = Number(value);
-                        setBaselineAngleDeg(value === "" || !Number.isFinite(parsed) ? null : parsed);
+                        setBaselineAngleDeg(
+                          value === "" || !Number.isFinite(parsed) ? null : parsed
+                        );
                       }}
                     />
                   </label>
@@ -1938,7 +1996,9 @@ const ReviewQueueLayout = ({
                     <span style={{ fontSize: "12px" }}>Mark correct</span>
                   </label>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}
+                >
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={onApplyOverride}
@@ -2099,10 +2159,20 @@ export function ReviewQueueScreen({
     const sources = [];
     const templateCandidates = [
       ...(sidecar?.bookModel?.runningHeadTemplates?.flatMap((template) =>
-        getBoxSnapCandidates(template.bbox, template.confidence ?? 1, "Template: running head", "templates")
+        getBoxSnapCandidates(
+          template.bbox,
+          template.confidence ?? 1,
+          "Template: running head",
+          "templates"
+        )
       ) ?? []),
       ...(sidecar?.bookModel?.ornamentLibrary?.flatMap((ornament) =>
-        getBoxSnapCandidates(ornament.bbox, ornament.confidence ?? 1, "Template: ornament", "templates")
+        getBoxSnapCandidates(
+          ornament.bbox,
+          ornament.confidence ?? 1,
+          "Template: ornament",
+          "templates"
+        )
       ) ?? []),
     ];
     sources.push({
@@ -2262,7 +2332,11 @@ export function ReviewQueueScreen({
       }
     } else if (mode === "trim" && !trimBox) {
       // Initialize default trim box if none exists (10% margin from crop box)
-      const baseCrop = cropBox || (normalizedPreview ? [0, 0, normalizedPreview.width - 1, normalizedPreview.height - 1] : null);
+      const baseCrop =
+        cropBox ||
+        (normalizedPreview
+          ? [0, 0, normalizedPreview.width - 1, normalizedPreview.height - 1]
+          : null);
       if (baseCrop) {
         const width = baseCrop[2] - baseCrop[0];
         const height = baseCrop[3] - baseCrop[1];
@@ -2284,7 +2358,11 @@ export function ReviewQueueScreen({
 
   useEffect(() => {
     const baseCropBox = sidecar?.normalization?.cropBox ?? null;
-    const rawTrimBox = buildTrimBoxFromCrop(baseCropBox, sidecar?.normalization?.trim, sidecar?.dpi);
+    const rawTrimBox = buildTrimBoxFromCrop(
+      baseCropBox,
+      sidecar?.normalization?.trim,
+      sidecar?.dpi
+    );
     const baseTrimBox = baseCropBox && rawTrimBox ? clampBox(rawTrimBox, baseCropBox) : null;
     const baselineGrid = buildBaselineGridOverrides(sidecar);
     baselineBoxesRef.current = {
@@ -2420,17 +2498,14 @@ export function ReviewQueueScreen({
       globalThis.removeEventListener?.("pointermove", handlePointerMove);
       globalThis.removeEventListener?.("pointerup", handlePointerUp);
     };
-  }, [
-    normalizedPreview,
-    sidecar?.normalization?.cropBox,
-    snapSources,
-    snapTemporarilyDisabled,
-  ]);
+  }, [normalizedPreview, sidecar?.normalization?.cropBox, snapSources, snapTemporarilyDisabled]);
 
   const handleSubmitReview = async (): Promise<void> => {
     const windowRef: typeof globalThis & {
       asteria?: {
-        ipc?: { [key: string]: (runId: string, runDir: string, payload: unknown) => Promise<unknown> };
+        ipc?: {
+          [key: string]: (runId: string, runDir: string, payload: unknown) => Promise<unknown>;
+        };
       };
     } = globalThis;
     if (!runId || !runDir || !windowRef.asteria?.ipc || decisions.size === 0) return;
@@ -2491,7 +2566,7 @@ export function ReviewQueueScreen({
     }
 
     const applyOverrideChannel = getIpcChannel<
-      [runId: string, pageId: string, overrides: Record<string, unknown>],
+      [runId: string, runDir: string, pageId: string, overrides: Record<string, unknown>],
       void
     >("asteria:apply-override");
     if (!applyOverrideChannel) {
@@ -2505,7 +2580,7 @@ export function ReviewQueueScreen({
       const failures: string[] = [];
       for (const targetPage of applyTargets) {
         try {
-          await applyOverrideChannel(runId, targetPage.id, overrides);
+          await applyOverrideChannel(runId, runDir, targetPage.id, overrides);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Failed to apply override";
           failures.push(`${targetPage.filename}: ${message}`);
@@ -2520,7 +2595,7 @@ export function ReviewQueueScreen({
         // eslint-disable-next-line no-console
         console.error("Failed to apply overrides for some pages:", failures);
         setOverrideError(
-          `Applied with ${failures.length} error${failures.length === 1 ? "" : "s"}: ${failureSummary}`,
+          `Applied with ${failures.length} error${failures.length === 1 ? "" : "s"}: ${failureSummary}`
         );
       } else {
         setLastOverrideAppliedAt(appliedAt);
@@ -2529,6 +2604,7 @@ export function ReviewQueueScreen({
           trim: trimBox,
         };
         baselineRotationRef.current = rotationDeg;
+        baselineGuidesRef.current = baselineGrid;
       }
       if (applyScope !== "page") {
         const recordTemplateTrainingChannel = getIpcChannel<
@@ -2555,17 +2631,12 @@ export function ReviewQueueScreen({
       }
       if (applyScope !== "page" && failures.length === 0) {
         setOverrideError(
-          appendError(overrideError, `Overrides applied to multiple pages. Other pages in this ${applyScope} may show stale data until you refresh the review queue.`)
+          appendError(
+            overrideError,
+            `Overrides applied to multiple pages. Other pages in this ${applyScope} may show stale data until you refresh the review queue.`
+          )
         );
       }
-      await windowRef.asteria.ipc["asteria:apply-override"](runId, runDir, currentPage.id, overrides);
-      setLastOverrideAppliedAt(new Date().toISOString());
-      baselineBoxesRef.current = {
-        crop: cropBox,
-        trim: trimBox,
-      };
-      baselineRotationRef.current = rotationDeg;
-      baselineGuidesRef.current = baselineGrid;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to apply override";
       setOverrideError(message);
@@ -2586,7 +2657,7 @@ export function ReviewQueueScreen({
       handler: (): void => setSelectedIndex(Math.max(selectedIndex - 1, 0)),
       description: "Previous page",
     },
-    
+
     // Decision actions
     {
       key: "a",
@@ -2616,7 +2687,7 @@ export function ReviewQueueScreen({
       },
       description: "Submit review decisions",
     },
-    
+
     // View controls
     {
       key: " ",
@@ -2638,7 +2709,7 @@ export function ReviewQueueScreen({
       handler: resetView,
       description: "Reset view",
     },
-    
+
     // Rotation controls
     {
       key: "[",
@@ -2662,7 +2733,7 @@ export function ReviewQueueScreen({
       handler: (): void => rotateBy(0.1),
       description: "Micro-rotate clockwise",
     },
-    
+
     // Pan controls
     {
       key: "ArrowUp",
@@ -2758,6 +2829,16 @@ export function ReviewQueueScreen({
       submitError={submitError}
       canSubmit={canSubmit}
       adjustmentMode={adjustmentMode}
+      baselineSpacingPx={baselineSpacingPx}
+      baselineOffsetPx={baselineOffsetPx}
+      baselineAngleDeg={baselineAngleDeg}
+      baselineSnapToPeaks={baselineSnapToPeaks}
+      baselineMarkCorrect={baselineMarkCorrect}
+      setBaselineSpacingPx={setBaselineSpacingPx}
+      setBaselineOffsetPx={setBaselineOffsetPx}
+      setBaselineAngleDeg={setBaselineAngleDeg}
+      setBaselineSnapToPeaks={setBaselineSnapToPeaks}
+      setBaselineMarkCorrect={setBaselineMarkCorrect}
       cropBox={activeCropBox}
       trimBox={activeTrimBox}
       isApplyingOverride={isApplyingOverride}
