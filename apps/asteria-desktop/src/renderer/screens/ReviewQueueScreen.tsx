@@ -1652,9 +1652,9 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
   const getSvgPoint = (
     event: globalThis.PointerEvent | PointerEvent<globalThis.SVGCircleElement>
   ): { x: number; y: number } | null => {
-    // Note: The SVG overlay is nested inside the rotated container (line ~1217), so it
-    // rotates with the image. getBoundingClientRect() accounts for all CSS transforms
-    // (rotation, zoom, pan), so pointer coordinates are correctly mapped even when rotated.
+    // Note: The SVG overlay is nested inside the rotated container (the div with the rotate
+    // transform), so it rotates with the image. getBoundingClientRect() accounts for all CSS
+    // transforms (rotation, zoom, pan), so pointer coordinates are correctly mapped even when rotated.
     const svg = overlaySvgRef.current;
     if (!svg || !normalizedPreview) return null;
     const rect = svg.getBoundingClientRect();
@@ -1705,7 +1705,8 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
           : sidecar?.bookModel?.contentBoxPx?.median;
       
       // Scale snap threshold based on output dimensions to provide consistent snapping
-      // at different zoom levels and image sizes (6px base threshold)
+      // at different zoom levels and image sizes. Uses 1% of average dimension with
+      // bounds of 4-12px to ensure reasonable snapping across image sizes.
       const avgDimension = (outputWidth + outputHeight) / 2;
       const scaledThreshold = Math.max(4, Math.min(12, avgDimension * 0.01));
       
@@ -1724,9 +1725,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
     const handlePointerUp = (): void => {
       if (dragHandleRef.current) {
         const { target, pointerId } = dragHandleRef.current;
-        if (target && "releasePointerCapture" in target && typeof target.releasePointerCapture === "function") {
-          target.releasePointerCapture(pointerId);
-        }
+        target.releasePointerCapture(pointerId);
         dragHandleRef.current = null;
       }
     };
