@@ -113,11 +113,13 @@ sequenceDiagram
 8. **Shading**: Estimate low-frequency illumination field and apply confidence-gated correction
 9. **Layout Detection**: Infer layout profile and element counts for QA gating + manifests
 10. **Normalization**:
-   - Scale to target DPI
-   - Crop with bleed/trim rules
-   - Generate quality metrics (sharpness, contrast)
-   - Create preview thumbnails (320px wide)
-   - Create overlay annotations
+
+- Scale to target DPI
+- Crop with bleed/trim rules
+- Generate quality metrics (sharpness, contrast)
+- Create preview thumbnails (320px wide)
+- Create overlay annotations
+
 11. **Export**: Write normalized PNGs, previews, overlays to `pipeline-results/runs/{runId}`; generate run-scoped manifest JSON
 
 - Emit schema-compliant JSON sidecars per run in `pipeline-results/runs/{runId}/sidecars/`
@@ -309,7 +311,7 @@ Each pipeline run generates a `manifest.json`:
 | **UI Framework**     | React                 | 19.2    | Component-based renderer                     |
 | **Build Tool**       | Vite                  | 7.3     | Fast dev server + bundling                   |
 | **Language**         | TypeScript            | 5.9     | Type safety across codebase                  |
-| **Runtime**          | Node.js (LTS)          | 24.13   | Main + tooling runtime                       |
+| **Runtime**          | Node.js (LTS)         | 24.13   | Main + tooling runtime                       |
 | **Package Manager**  | pnpm                  | 10.28   | Workspace installs + lockfile                |
 | **Image Processing** | Sharp                 | 0.34    | Resize, format conversion, metadata          |
 | **Testing (Unit)**   | Vitest                | 4.0     | Fast test runner + coverage                  |
@@ -467,7 +469,7 @@ graph LR
 
 **Performance Benchmarks**:
 
-- **Command**: `pnpm benchmark:run` (fixed-size corpus from `projects/mind-myth-and-magick`). 
+- **Command**: `pnpm benchmark:run` (fixed-size corpus from `projects/mind-myth-and-magick`).
 - **Defaults**: 8 pages, results stored in `apps/asteria-desktop/benchmark-results/benchmark.json`.
 - **Metrics**: Per-stage latency + throughput (pages/sec), total duration, overall throughput.
 - **Thresholds**: CI fails if any stage latency exceeds `ASTERIA_BENCHMARK_MAX_STAGE_LATENCY_MS` (default: 180,000ms). Override with:

@@ -12,18 +12,8 @@
   },
   "dpi": 72,
   "normalization": {
-    "cropBox": [
-      0,
-      0,
-      2174,
-      3074
-    ],
-    "pageMask": [
-      26,
-      30,
-      2145,
-      3040
-    ],
+    "cropBox": [0, 0, 2174, 3074],
+    "pageMask": [26, 30, 2145, 3040],
     "dpiSource": "metadata",
     "bleed": 12.499975,
     "trim": 0,
@@ -55,137 +45,74 @@
     {
       "id": "p12_rot_perspective-page-bounds",
       "type": "page_bounds",
-      "bbox": [
-        0,
-        0,
-        2174,
-        3074
-      ],
+      "bbox": [0, 0, 2174, 3074],
       "confidence": 0.6,
       "source": "local",
-      "flags": [
-        "derived"
-      ]
+      "flags": ["derived"]
     },
     {
       "id": "p12_rot_perspective-text-block",
       "type": "text_block",
-      "bbox": [
-        26,
-        30,
-        2145,
-        3040
-      ],
+      "bbox": [26, 30, 2145, 3040],
       "confidence": 0.55,
       "source": "local",
-      "flags": [
-        "mask-derived"
-      ]
+      "flags": ["mask-derived"]
     },
     {
       "id": "p12_rot_perspective-title",
       "type": "title",
-      "bbox": [
-        280,
-        90,
-        1891,
-        451
-      ],
+      "bbox": [280, 90, 1891, 451],
       "confidence": 0.28,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-running-head",
       "type": "running_head",
-      "bbox": [
-        238,
-        30,
-        1933,
-        271
-      ],
+      "bbox": [238, 30, 1933, 271],
       "confidence": 0.25,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-folio",
       "type": "folio",
-      "bbox": [
-        916,
-        2739,
-        1255,
-        2980
-      ],
+      "bbox": [916, 2739, 1255, 2980],
       "confidence": 0.22,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-ornament",
       "type": "ornament",
-      "bbox": [
-        916,
-        572,
-        1255,
-        752
-      ],
+      "bbox": [916, 572, 1255, 752],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-drop-cap",
       "type": "drop_cap",
-      "bbox": [
-        68,
-        572,
-        238,
-        993
-      ],
+      "bbox": [68, 572, 238, 993],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-footnote",
       "type": "footnote",
-      "bbox": [
-        132,
-        2619,
-        2039,
-        2980
-      ],
+      "bbox": [132, 2619, 2039, 2980],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p12_rot_perspective-marginalia",
       "type": "marginalia",
-      "bbox": [
-        26,
-        783,
-        196,
-        2288
-      ],
+      "bbox": [26, 783, 196, 2288],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     }
   ],
   "metrics": {

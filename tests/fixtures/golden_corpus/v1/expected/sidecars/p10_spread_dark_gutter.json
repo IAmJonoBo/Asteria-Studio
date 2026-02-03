@@ -12,18 +12,8 @@
   },
   "dpi": 300,
   "normalization": {
-    "cropBox": [
-      0,
-      0,
-      2174,
-      3074
-    ],
-    "pageMask": [
-      3,
-      7,
-      2171,
-      3067
-    ],
+    "cropBox": [0, 0, 2174, 3074],
+    "pageMask": [3, 7, 2171, 3067],
     "dpiSource": "fallback",
     "bleed": 2.9999939999999996,
     "trim": 0,
@@ -55,137 +45,74 @@
     {
       "id": "p10_spread_dark_gutter-page-bounds",
       "type": "page_bounds",
-      "bbox": [
-        0,
-        0,
-        2174,
-        3074
-      ],
+      "bbox": [0, 0, 2174, 3074],
       "confidence": 0.6,
       "source": "local",
-      "flags": [
-        "derived"
-      ]
+      "flags": ["derived"]
     },
     {
       "id": "p10_spread_dark_gutter-text-block",
       "type": "text_block",
-      "bbox": [
-        3,
-        7,
-        2171,
-        3067
-      ],
+      "bbox": [3, 7, 2171, 3067],
       "confidence": 0.55,
       "source": "local",
-      "flags": [
-        "mask-derived"
-      ]
+      "flags": ["mask-derived"]
     },
     {
       "id": "p10_spread_dark_gutter-title",
       "type": "title",
-      "bbox": [
-        263,
-        68,
-        1911,
-        435
-      ],
+      "bbox": [263, 68, 1911, 435],
       "confidence": 0.28,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-running-head",
       "type": "running_head",
-      "bbox": [
-        220,
-        7,
-        1954,
-        252
-      ],
+      "bbox": [220, 7, 1954, 252],
       "confidence": 0.25,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-folio",
       "type": "folio",
-      "bbox": [
-        914,
-        2761,
-        1260,
-        3006
-      ],
+      "bbox": [914, 2761, 1260, 3006],
       "confidence": 0.22,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-ornament",
       "type": "ornament",
-      "bbox": [
-        914,
-        558,
-        1260,
-        741
-      ],
+      "bbox": [914, 558, 1260, 741],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-drop-cap",
       "type": "drop_cap",
-      "bbox": [
-        46,
-        558,
-        220,
-        986
-      ],
+      "bbox": [46, 558, 220, 986],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-footnote",
       "type": "footnote",
-      "bbox": [
-        111,
-        2639,
-        2063,
-        3006
-      ],
+      "bbox": [111, 2639, 2063, 3006],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p10_spread_dark_gutter-marginalia",
       "type": "marginalia",
-      "bbox": [
-        3,
-        772,
-        176,
-        2302
-      ],
+      "bbox": [3, 772, 176, 2302],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     }
   ],
   "metrics": {

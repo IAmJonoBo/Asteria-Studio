@@ -124,8 +124,7 @@ async function main(): Promise<void> {
       .sort((a, b) => a.startMs - b.startMs)
       .map((timing) => {
         const latencyMs = Math.max(0, timing.endMs - timing.startMs);
-        const throughput =
-          latencyMs > 0 ? timing.processed / Math.max(0.001, latencyMs / 1000) : 0;
+        const throughput = latencyMs > 0 ? timing.processed / Math.max(0.001, latencyMs / 1000) : 0;
         return {
           stage: timing.stage,
           processed: timing.processed,
@@ -172,9 +171,7 @@ async function main(): Promise<void> {
     info(`Run ID: ${summary.runId}`);
     info(`Pages Processed: ${summary.pagesProcessed}`);
     info(`Total Duration: ${(summary.totalDurationMs / 1000).toFixed(2)}s`);
-    info(
-      `Overall Throughput: ${summary.overallThroughputPagesPerSecond.toFixed(2)} pages/sec`
-    );
+    info(`Overall Throughput: ${summary.overallThroughputPagesPerSecond.toFixed(2)} pages/sec`);
     note("Stage Metrics:");
     stageMetrics.forEach((metric) => {
       info(

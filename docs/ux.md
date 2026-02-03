@@ -88,12 +88,12 @@ It is used to verify bounds, text baselines, and gutter splits without altering 
 
 **Guides Mode shortcuts**:
 
-| Key               | Action                 | Description                                   |
-| ----------------- | ---------------------- | --------------------------------------------- |
-| `G`               | Toggle Guides Mode     | Enter/exit guides inspection                  |
-| `Shift + G`       | Cycle guide sets       | All → Layout → Text → Baselines               |
-| `Ctrl/Cmd + G`    | Toggle guide legend    | Show/hide legend for quick inspection         |
-| `Esc`             | Exit Guides Mode       | Returns to standard review overlays           |
+| Key            | Action              | Description                           |
+| -------------- | ------------------- | ------------------------------------- |
+| `G`            | Toggle Guides Mode  | Enter/exit guides inspection          |
+| `Shift + G`    | Cycle guide sets    | All → Layout → Text → Baselines       |
+| `Ctrl/Cmd + G` | Toggle guide legend | Show/hide legend for quick inspection |
+| `Esc`          | Exit Guides Mode    | Returns to standard review overlays   |
 
 ### 3. Run Status & Feedback
 

@@ -1363,11 +1363,7 @@ type ReviewQueueLayoutProps = {
   onApplyDecisionToSelection: (decision: DecisionValue) => void;
   onAcceptSameReason: () => void;
   onToggleOverlayLayer: (layerKey: OverlayLayerKey, checked: boolean) => void;
-  onToggleGuideGroup: (
-    group: GuideGroup,
-    checked: boolean,
-    event: { altKey?: boolean }
-  ) => void;
+  onToggleGuideGroup: (group: GuideGroup, checked: boolean, event: { altKey?: boolean }) => void;
   onGuideGroupOpacityChange: (group: GuideGroup, opacity: number) => void;
   onAccept: () => void;
   onFlag: () => void;
@@ -1836,9 +1832,12 @@ const ReviewQueueLayout = ({
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={(event) =>
-                            onToggleGuideGroup(group, event.target.checked, event.nativeEvent)
-                          }
+                          onChange={(event) => {
+                            const nativeEvent = event.nativeEvent as unknown as MouseEvent;
+                            onToggleGuideGroup(group, event.target.checked, {
+                              altKey: nativeEvent.altKey,
+                            });
+                          }}
                           aria-label={`${GUIDE_GROUP_LABELS[group]} guide visibility`}
                         />
                         <span style={{ fontSize: "12px" }}>{GUIDE_GROUP_LABELS[group]}</span>

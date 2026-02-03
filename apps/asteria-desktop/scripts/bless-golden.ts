@@ -3,11 +3,7 @@ import fs from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import { runPipeline } from "../src/main/pipeline-runner.ts";
-import {
-  getRunDir,
-  getRunManifestPath,
-  getRunReviewQueuePath,
-} from "../src/main/run-paths.ts";
+import { getRunDir, getRunManifestPath, getRunReviewQueuePath } from "../src/main/run-paths.ts";
 import { info, note, section, startStep } from "./cli.ts";
 
 const repoRoot = path.resolve(process.cwd(), "..", "..");
@@ -43,7 +39,9 @@ const hashDirectory = async (dir: string): Promise<string> => {
 };
 
 const resolvePython = (): string => {
-  const candidates = [process.env.GOLDEN_PYTHON, "python3.11", "python3"].filter(Boolean) as string[];
+  const candidates = [process.env.GOLDEN_PYTHON, "python3.11", "python3"].filter(
+    Boolean
+  ) as string[];
   for (const candidate of candidates) {
     const probe = spawnSync(candidate, ["--version"], { stdio: "ignore" });
     if (probe.status === 0) return candidate;

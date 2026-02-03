@@ -1,6 +1,5 @@
 const supportsColor = Boolean(process.stdout.isTTY);
-const colorize = (code) => (value) =>
-  supportsColor ? `\u001b[${code}m${value}\u001b[0m` : value;
+const colorize = (code) => (value) => (supportsColor ? `\u001b[${code}m${value}\u001b[0m` : value);
 
 const dim = colorize("2");
 const green = colorize("32");

@@ -7,7 +7,9 @@ const fixturesRoot = path.join(repoRoot, "tests", "fixtures", "golden_corpus", "
 const generatorPath = path.join(repoRoot, "tools", "golden_corpus", "generate.py");
 
 const resolvePython = (): string => {
-  const candidates = [process.env.GOLDEN_PYTHON, "python3.11", "python3"].filter(Boolean) as string[];
+  const candidates = [process.env.GOLDEN_PYTHON, "python3.11", "python3"].filter(
+    Boolean
+  ) as string[];
   for (const candidate of candidates) {
     const result = spawnSync(candidate, ["--version"], { stdio: "ignore" });
     if (result.status === 0) return candidate;

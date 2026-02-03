@@ -92,7 +92,10 @@ async function main(): Promise<void> {
     const runDir = getRunDir(outputDir, result.runId);
     const reportPath = path.join(runDir, "evaluation.json");
     const writeStep = startStep("Write evaluation report");
-    await fs.writeFile(reportPath, JSON.stringify({ executedAt: new Date().toISOString(), result, evaluation }, null, 2));
+    await fs.writeFile(
+      reportPath,
+      JSON.stringify({ executedAt: new Date().toISOString(), result, evaluation }, null, 2)
+    );
     writeStep.end("ok", reportPath);
   } catch (error) {
     console.error("Pipeline execution failed:");

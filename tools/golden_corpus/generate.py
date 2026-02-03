@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import numpy as np
 import cv2
-from PIL import Image, ImageDraw, ImageFont
 import imagehash
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel
 
 WIDTH = 2175
@@ -42,7 +42,9 @@ def new_canvas(width: int, height: int, value: int = BACKGROUND) -> Image.Image:
     return Image.fromarray(arr, mode="RGB")
 
 
-def add_paper_texture(img: Image.Image, rng: np.random.Generator, strength: float = 2.0) -> Image.Image:
+def add_paper_texture(
+    img: Image.Image, rng: np.random.Generator, strength: float = 2.0
+) -> Image.Image:
     arr = np.array(img, dtype=np.float32)
     noise = rng.normal(0, strength, size=arr.shape).astype(np.float32)
     arr = np.clip(arr + noise, 0, 255).astype(np.uint8)
@@ -82,7 +84,9 @@ def draw_folio(draw: ImageDraw.ImageDraw, width: int, bottom: int, folio: str) -
     draw.text(((width - text_width) / 2, bottom), folio, fill=(50, 50, 50), font=font)
 
 
-def apply_shadow_gradient(img: Image.Image, side: str, width: int, min_factor: float) -> Image.Image:
+def apply_shadow_gradient(
+    img: Image.Image, side: str, width: int, min_factor: float
+) -> Image.Image:
     arr = np.array(img, dtype=np.float32)
     h, w = arr.shape[:2]
     width = max(1, min(width, w))
@@ -100,7 +104,9 @@ def apply_shadow_gradient(img: Image.Image, side: str, width: int, min_factor: f
     return Image.fromarray(arr, mode="RGB")
 
 
-def apply_linear_illumination(img: Image.Image, axis: str, start: float, end: float) -> Image.Image:
+def apply_linear_illumination(
+    img: Image.Image, axis: str, start: float, end: float
+) -> Image.Image:
     arr = np.array(img, dtype=np.float32)
     h, w = arr.shape[:2]
     if axis == "x":
@@ -133,7 +139,14 @@ def apply_curved_warp(img: Image.Image, amplitude: float) -> Image.Image:
     map_y = map_y.astype(np.float32)
     map_x = map_x.astype(np.float32)
     map_y = map_y + amplitude * np.sin(2 * math.pi * map_x / w)
-    warped = cv2.remap(arr, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255))
+    warped = cv2.remap(
+        arr,
+        map_x,
+        map_y,
+        interpolation=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
     return Image.fromarray(warped, mode="RGB")
 
 
@@ -142,11 +155,25 @@ def apply_rotation_perspective(img: Image.Image, angle: float) -> Image.Image:
     h, w = arr.shape[:2]
     center = (w / 2.0, h / 2.0)
     rot = cv2.getRotationMatrix2D(center, angle, 1.0)
-    rotated = cv2.warpAffine(arr, rot, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255))
+    rotated = cv2.warpAffine(
+        arr,
+        rot,
+        (w, h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
     src = np.float32([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]])
     dst = np.float32([[40, 20], [w - 60, 0], [w - 20, h - 40], [0, h - 10]])
     matrix = cv2.getPerspectiveTransform(src, dst)
-    warped = cv2.warpPerspective(rotated, matrix, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255))
+    warped = cv2.warpPerspective(
+        rotated,
+        matrix,
+        (w, h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
     return Image.fromarray(warped, mode="RGB")
 
 
@@ -155,11 +182,20 @@ def apply_rotation(img: Image.Image, angle: float) -> Image.Image:
     h, w = arr.shape[:2]
     center = (w / 2.0, h / 2.0)
     rot = cv2.getRotationMatrix2D(center, angle, 1.0)
-    rotated = cv2.warpAffine(arr, rot, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255))
+    rotated = cv2.warpAffine(
+        arr,
+        rot,
+        (w, h),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=(255, 255, 255),
+    )
     return Image.fromarray(rotated, mode="RGB")
 
 
-def draw_ornament(draw: ImageDraw.ImageDraw, center: Tuple[int, int], size: int) -> Tuple[int, int, int, int]:
+def draw_ornament(
+    draw: ImageDraw.ImageDraw, center: Tuple[int, int], size: int
+) -> Tuple[int, int, int, int]:
     cx, cy = center
     radius = size // 2
     bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
@@ -189,7 +225,9 @@ def spread_confidence(image: Image.Image) -> float:
     preview_width = min(320, w)
     scale = preview_width / w
     preview_height = max(1, int(round(h * scale)))
-    preview = cv2.resize(arr, (preview_width, preview_height), interpolation=cv2.INTER_AREA)
+    preview = cv2.resize(
+        arr, (preview_width, preview_height), interpolation=cv2.INTER_AREA
+    )
     gray = cv2.cvtColor(preview, cv2.COLOR_RGB2GRAY)
     column_means = gray.mean(axis=0)
     global_mean = float(column_means.mean())
@@ -214,9 +252,14 @@ def spread_confidence(image: Image.Image) -> float:
     mid = preview_width // 2
     center_distance = abs(min_index - mid) / max(1, mid)
     left_density = column_means[:mid].mean() if mid > 0 else global_mean
-    right_density = column_means[mid:].mean() if preview_width - mid > 0 else global_mean
+    right_density = (
+        column_means[mid:].mean() if preview_width - mid > 0 else global_mean
+    )
     symmetry = 1 - min(1, abs(left_density - right_density) / max(1, global_mean))
-    confidence = max(0.0, min(1.0, (darkness / 35) * 0.6 + symmetry * 0.3 + (1 - center_distance) * 0.1))
+    confidence = max(
+        0.0,
+        min(1.0, (darkness / 35) * 0.6 + symmetry * 0.3 + (1 - center_distance) * 0.1),
+    )
     return confidence
 
 
@@ -283,7 +326,9 @@ def save_json(obj: BaseModel, path: Path) -> None:
         json.dump(payload, f, indent=2)
 
 
-def build_clean_single(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_clean_single(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
@@ -309,7 +354,9 @@ def build_clean_single(rng: np.random.Generator, width: int, height: int) -> Tup
     return img, truth, manifest
 
 
-def build_clean_double(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_clean_double(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
@@ -340,7 +387,9 @@ def build_clean_double(rng: np.random.Generator, width: int, height: int) -> Tup
     return img, truth, manifest
 
 
-def build_running_head(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_running_head(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.8)
     draw = ImageDraw.Draw(img)
@@ -370,7 +419,9 @@ def build_running_head(rng: np.random.Generator, width: int, height: int) -> Tup
     return img, truth, manifest
 
 
-def build_ornament(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_ornament(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
@@ -400,7 +451,9 @@ def build_ornament(rng: np.random.Generator, width: int, height: int) -> Tuple[I
     return img, truth, manifest
 
 
-def build_footnotes_marginalia(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_footnotes_marginalia(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.7)
     draw = ImageDraw.Draw(img)
@@ -430,7 +483,9 @@ def build_footnotes_marginalia(rng: np.random.Generator, width: int, height: int
     return img, truth, manifest
 
 
-def build_blank_verso(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_blank_verso(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height, value=248)
     img = add_paper_texture(img, rng, strength=1.0)
     truth = TruthPage(
@@ -441,7 +496,11 @@ def build_blank_verso(rng: np.random.Generator, width: int, height: int) -> Tupl
         baselineGrid=BaselineGrid(medianSpacingPx=None),
         ornaments=[],
         shouldSplit=False,
-        expectedReviewReasons=["low-skew-confidence", "low-shading-confidence", "residual-skew-*"],
+        expectedReviewReasons=[
+            "low-skew-confidence",
+            "low-shading-confidence",
+            "residual-skew-*",
+        ],
     )
     manifest = ManifestEntry(
         id="p06_blank_verso",
@@ -453,13 +512,23 @@ def build_blank_verso(rng: np.random.Generator, width: int, height: int) -> Tupl
     return img, truth, manifest
 
 
-def build_plate(rng: np.random.Generator, width: int, height: int) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_plate(
+    rng: np.random.Generator, width: int, height: int
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.3)
     draw = ImageDraw.Draw(img)
-    plate_box = (MARGIN + 100, MARGIN + 200, width - MARGIN - 100, height - MARGIN - 300)
+    plate_box = (
+        MARGIN + 100,
+        MARGIN + 200,
+        width - MARGIN - 100,
+        height - MARGIN - 300,
+    )
     draw.rectangle(plate_box, outline=(20, 20, 20), width=4)
-    gradient = np.tile(np.linspace(200, 240, plate_box[2] - plate_box[0], dtype=np.uint8), (plate_box[3] - plate_box[1], 1))
+    gradient = np.tile(
+        np.linspace(200, 240, plate_box[2] - plate_box[0], dtype=np.uint8),
+        (plate_box[3] - plate_box[1], 1),
+    )
     gradient_img = np.stack([gradient] * 3, axis=2)
     plate = Image.fromarray(gradient_img, mode="RGB")
     img.paste(plate, plate_box[:2])
@@ -518,15 +587,27 @@ def build_shadow_page(
     return img, truth, manifest
 
 
-def build_spread(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_spread(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     width = WIDTH * 2
     height = HEIGHT
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.4)
     draw = ImageDraw.Draw(img)
     gutter_width = 220
-    left_box = (MARGIN, MARGIN + 40, WIDTH - MARGIN - gutter_width // 2, height - MARGIN)
-    right_box = (WIDTH + gutter_width // 2 + MARGIN, MARGIN + 40, width - MARGIN, height - MARGIN)
+    left_box = (
+        MARGIN,
+        MARGIN + 40,
+        WIDTH - MARGIN - gutter_width // 2,
+        height - MARGIN,
+    )
+    right_box = (
+        WIDTH + gutter_width // 2 + MARGIN,
+        MARGIN + 40,
+        width - MARGIN,
+        height - MARGIN,
+    )
     add_text_block(draw, left_box, 40, rng)
     add_text_block(draw, right_box, 40, rng)
 
@@ -534,7 +615,9 @@ def build_spread(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, Mani
     gutter_end = WIDTH + gutter_width // 2
     gutter_color = 225
     for attempt in range(6):
-        overlay = Image.new("RGB", (width, height), (BACKGROUND, BACKGROUND, BACKGROUND))
+        overlay = Image.new(
+            "RGB", (width, height), (BACKGROUND, BACKGROUND, BACKGROUND)
+        )
         overlay_arr = np.array(overlay)
         overlay_arr[:, gutter_start:gutter_end, :] = gutter_color
         overlay = Image.fromarray(overlay_arr, mode="RGB")
@@ -543,7 +626,9 @@ def build_spread(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, Mani
         if 0.6 <= confidence < 0.7:
             img = composite
             break
-        gutter_color = max(200, min(240, gutter_color + (2 if confidence < 0.6 else -3)))
+        gutter_color = max(
+            200, min(240, gutter_color + (2 if confidence < 0.6 else -3))
+        )
         img = composite
 
     truth = TruthPage(
@@ -570,7 +655,9 @@ def build_spread(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, Mani
     return img, truth, manifest
 
 
-def build_curved_warp(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_curved_warp(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(WIDTH, HEIGHT)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
@@ -597,7 +684,9 @@ def build_curved_warp(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage,
     return img, truth, manifest
 
 
-def build_rotation_perspective(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_rotation_perspective(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(WIDTH, HEIGHT)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
@@ -624,7 +713,9 @@ def build_rotation_perspective(rng: np.random.Generator) -> Tuple[Image.Image, T
     return img, truth, manifest
 
 
-def build_rotation_only(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_rotation_only(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(WIDTH, HEIGHT)
     img = add_paper_texture(img, rng, strength=1.6)
     draw = ImageDraw.Draw(img)
@@ -651,15 +742,27 @@ def build_rotation_only(rng: np.random.Generator) -> Tuple[Image.Image, TruthPag
     return img, truth, manifest
 
 
-def build_spread_light_gutter(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_spread_light_gutter(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     width = WIDTH * 2
     height = HEIGHT
     img = new_canvas(width, height)
     img = add_paper_texture(img, rng, strength=1.5)
     draw = ImageDraw.Draw(img)
     gutter_width = 160
-    left_box = (MARGIN, MARGIN + 40, WIDTH - MARGIN - gutter_width // 2, height - MARGIN)
-    right_box = (WIDTH + gutter_width // 2 + MARGIN, MARGIN + 40, width - MARGIN, height - MARGIN)
+    left_box = (
+        MARGIN,
+        MARGIN + 40,
+        WIDTH - MARGIN - gutter_width // 2,
+        height - MARGIN,
+    )
+    right_box = (
+        WIDTH + gutter_width // 2 + MARGIN,
+        MARGIN + 40,
+        width - MARGIN,
+        height - MARGIN,
+    )
     add_text_block(draw, left_box, 40, rng)
     add_text_block(draw, right_box, 40, rng)
 
@@ -667,7 +770,9 @@ def build_spread_light_gutter(rng: np.random.Generator) -> Tuple[Image.Image, Tr
     gutter_end = WIDTH + gutter_width // 2
     gutter_color = 232
     for _attempt in range(5):
-        overlay = Image.new("RGB", (width, height), (BACKGROUND, BACKGROUND, BACKGROUND))
+        overlay = Image.new(
+            "RGB", (width, height), (BACKGROUND, BACKGROUND, BACKGROUND)
+        )
         overlay_arr = np.array(overlay)
         overlay_arr[:, gutter_start:gutter_end, :] = gutter_color
         overlay = Image.fromarray(overlay_arr, mode="RGB")
@@ -676,7 +781,9 @@ def build_spread_light_gutter(rng: np.random.Generator) -> Tuple[Image.Image, Tr
         img = composite
         if 0.45 <= confidence < 0.58:
             break
-        gutter_color = max(210, min(240, gutter_color + (2 if confidence < 0.45 else -2)))
+        gutter_color = max(
+            210, min(240, gutter_color + (2 if confidence < 0.45 else -2))
+        )
 
     truth = TruthPage(
         pageId="p14_spread_light_gutter",
@@ -702,7 +809,9 @@ def build_spread_light_gutter(rng: np.random.Generator) -> Tuple[Image.Image, Tr
     return img, truth, manifest
 
 
-def build_crop_adjustment(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_crop_adjustment(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(WIDTH, HEIGHT)
     img = add_paper_texture(img, rng, strength=1.9)
     draw = ImageDraw.Draw(img)
@@ -714,7 +823,12 @@ def build_crop_adjustment(rng: np.random.Generator) -> Tuple[Image.Image, TruthP
     truth = TruthPage(
         pageId="p15_crop_adjustment",
         pageBoundsPx=[0, 0, WIDTH - 1, HEIGHT - 1],
-        contentBoxPx=[MARGIN - 70, MARGIN - 30, WIDTH - MARGIN + 60, HEIGHT - MARGIN + 60],
+        contentBoxPx=[
+            MARGIN - 70,
+            MARGIN - 30,
+            WIDTH - MARGIN + 60,
+            HEIGHT - MARGIN + 60,
+        ],
         gutter=Gutter(side="none", widthPx=0),
         baselineGrid=BaselineGrid(medianSpacingPx=27.35),
         ornaments=[],
@@ -731,7 +845,9 @@ def build_crop_adjustment(rng: np.random.Generator) -> Tuple[Image.Image, TruthP
     return img, truth, manifest
 
 
-def build_overlay_element_classes(rng: np.random.Generator) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
+def build_overlay_element_classes(
+    rng: np.random.Generator,
+) -> Tuple[Image.Image, TruthPage, ManifestEntry]:
     img = new_canvas(WIDTH, HEIGHT)
     img = add_paper_texture(img, rng, strength=1.6)
     draw = ImageDraw.Draw(img)
@@ -761,14 +877,24 @@ def build_overlay_element_classes(rng: np.random.Generator) -> Tuple[Image.Image
     manifest = ManifestEntry(
         id="p16_overlay_elements",
         description="overlay element class showcase",
-        tags=["overlay", "elements", "title", "drop-cap", "marginalia", "footnotes", "ornament"],
+        tags=[
+            "overlay",
+            "elements",
+            "title",
+            "drop-cap",
+            "marginalia",
+            "footnotes",
+            "ornament",
+        ],
         truthFile="p16_overlay_elements.json",
         ssimThreshold=0.985,
     )
     return img, truth, manifest
 
 
-def build_pages(rng: np.random.Generator) -> List[Tuple[Image.Image, TruthPage, ManifestEntry]]:
+def build_pages(
+    rng: np.random.Generator,
+) -> List[Tuple[Image.Image, TruthPage, ManifestEntry]]:
     pages: List[Tuple[Image.Image, TruthPage, ManifestEntry]] = []
     img, truth, manifest = build_clean_single(rng, WIDTH, HEIGHT)
     pages.append((img, truth, manifest))

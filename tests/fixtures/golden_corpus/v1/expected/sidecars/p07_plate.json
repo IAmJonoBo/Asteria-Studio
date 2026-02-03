@@ -12,18 +12,8 @@
   },
   "dpi": 72,
   "normalization": {
-    "cropBox": [
-      0,
-      0,
-      2174,
-      3074
-    ],
-    "pageMask": [
-      1,
-      1,
-      2173,
-      3073
-    ],
+    "cropBox": [0, 0, 2174, 3074],
+    "pageMask": [1, 1, 2173, 3073],
     "dpiSource": "metadata",
     "bleed": 12.499975,
     "trim": 0,
@@ -55,137 +45,74 @@
     {
       "id": "p07_plate-page-bounds",
       "type": "page_bounds",
-      "bbox": [
-        0,
-        0,
-        2174,
-        3074
-      ],
+      "bbox": [0, 0, 2174, 3074],
       "confidence": 0.6,
       "source": "local",
-      "flags": [
-        "derived"
-      ]
+      "flags": ["derived"]
     },
     {
       "id": "p07_plate-text-block",
       "type": "text_block",
-      "bbox": [
-        1,
-        1,
-        2173,
-        3073
-      ],
+      "bbox": [1, 1, 2173, 3073],
       "confidence": 0.55,
       "source": "local",
-      "flags": [
-        "mask-derived"
-      ]
+      "flags": ["mask-derived"]
     },
     {
       "id": "p07_plate-title",
       "type": "title",
-      "bbox": [
-        262,
-        62,
-        1912,
-        431
-      ],
+      "bbox": [262, 62, 1912, 431],
       "confidence": 0.28,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-running-head",
       "type": "running_head",
-      "bbox": [
-        218,
-        1,
-        1956,
-        247
-      ],
+      "bbox": [218, 1, 1956, 247],
       "confidence": 0.25,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-folio",
       "type": "folio",
-      "bbox": [
-        913,
-        2766,
-        1261,
-        3012
-      ],
+      "bbox": [913, 2766, 1261, 3012],
       "confidence": 0.22,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-ornament",
       "type": "ornament",
-      "bbox": [
-        913,
-        554,
-        1261,
-        738
-      ],
+      "bbox": [913, 554, 1261, 738],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-drop-cap",
       "type": "drop_cap",
-      "bbox": [
-        44,
-        554,
-        218,
-        984
-      ],
+      "bbox": [44, 554, 218, 984],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-footnote",
       "type": "footnote",
-      "bbox": [
-        110,
-        2643,
-        2064,
-        3012
-      ],
+      "bbox": [110, 2643, 2064, 3012],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p07_plate-marginalia",
       "type": "marginalia",
-      "bbox": [
-        1,
-        769,
-        175,
-        2305
-      ],
+      "bbox": [1, 769, 175, 2305],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     }
   ],
   "metrics": {

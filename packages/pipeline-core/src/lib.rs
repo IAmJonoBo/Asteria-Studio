@@ -314,10 +314,13 @@ pub fn baseline_metrics_js(data: Buffer, width: u32, height: u32) -> BaselineMet
         0.0
     };
     let sharpness_score = (peak_sharpness / 3.0).clamp(0.0, 1.0);
-    let confidence = (0.4 * spacing_score + 0.35 * sharpness_score + 0.25 * peak_count_score)
-        .clamp(0.0, 1.0);
+    let confidence =
+        (0.4 * spacing_score + 0.35 * sharpness_score + 0.25 * peak_count_score).clamp(0.0, 1.0);
     let peaks_y: Vec<f64> = if height > 1 {
-        peaks.iter().map(|y| *y as f64 / ((height - 1) as f64)).collect()
+        peaks
+            .iter()
+            .map(|y| *y as f64 / ((height - 1) as f64))
+            .collect()
     } else {
         Vec::new()
     };

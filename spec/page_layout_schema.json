@@ -281,7 +281,10 @@
       "type": "object",
       "description": "User adjustments captured during review",
       "properties": {
-        "rotationDelta": { "type": "number", "description": "Degrees clockwise applied by reviewer" },
+        "rotationDelta": {
+          "type": "number",
+          "description": "Degrees clockwise applied by reviewer"
+        },
         "cropOffsets": {
           "type": "array",
           "items": { "type": "number" },

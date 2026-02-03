@@ -15,6 +15,7 @@ If your default `python3` is incompatible (for example, Python 3.14), set:
 ```sh
 GOLDEN_PYTHON=python3.11 pnpm golden:generate
 ```
+
 - Bless expected outputs (writes `expected/`):
 
 ```sh
@@ -35,10 +36,10 @@ pnpm golden:test
 
 ## Adding a new golden case
 
-1) Update `tools/golden_corpus/generate.py` with a new page spec and truth fields.
-2) Add a manifest entry (tags + SSIM threshold).
-3) Run `pnpm golden:bless` to capture new expected outputs.
-4) Commit the updated fixtures and expected outputs.
+1. Update `tools/golden_corpus/generate.py` with a new page spec and truth fields.
+2. Add a manifest entry (tags + SSIM threshold).
+3. Run `pnpm golden:bless` to capture new expected outputs.
+4. Commit the updated fixtures and expected outputs.
 
 ### Current case expectations
 

@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
 import type { PipelineConfig } from "../../ipc/contracts.js";
 import type { GuideLayout } from "../../ipc/contracts.js";
@@ -35,6 +36,9 @@ describe("guide registry tokens", () => {
 });
 
 describe("guide registry rendering", () => {
+  const getLayerProps = (layer: ReactElement): Record<string, unknown> =>
+    layer.props as Record<string, unknown>;
+
   it("renders explicit guide layers once minor guides are visible", () => {
     const layerIds = [
       "baseline-grid",
@@ -77,7 +81,9 @@ describe("guide registry rendering", () => {
       visibleLayers,
     });
 
-    expect(highZoomLayers.map((layer) => layer.props["data-guide-layer"])).toEqual(layerIds);
+    expect(highZoomLayers.map((layer) => getLayerProps(layer)["data-guide-layer"])).toEqual(
+      layerIds
+    );
   });
 
   it("applies per-group opacity when rendering guides", () => {
@@ -107,16 +113,11 @@ describe("guide registry rendering", () => {
     });
 
     expect(renderedLayers).toHaveLength(1);
-    expect(renderedLayers[0].props.opacity).toBeCloseTo(0.35);
+    expect(getLayerProps(renderedLayers[0]).opacity).toBeCloseTo(0.35);
   });
 
   it("can solo a guide group", () => {
-    const layerIds = [
-      "baseline-grid",
-      "gutter-bands",
-      "header-footer-bands",
-      "diagnostic-guides",
-    ];
+    const layerIds = ["baseline-grid", "gutter-bands", "header-footer-bands", "diagnostic-guides"];
     const guideLayout: GuideLayout = {
       layers: layerIds.map((id, index) => ({
         id,
@@ -141,7 +142,7 @@ describe("guide registry rendering", () => {
       soloGroup: "detected",
     });
 
-    expect(soloLayers.map((layer) => layer.props["data-guide-layer"])).toEqual([
+    expect(soloLayers.map((layer) => getLayerProps(layer)["data-guide-layer"])).toEqual([
       "gutter-bands",
       "header-footer-bands",
     ]);

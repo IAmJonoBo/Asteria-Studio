@@ -59,7 +59,9 @@ export const startStep = (label: string): Step => {
     end: (status: StepStatus = "ok", detail?: string) => {
       const duration = formatDuration(Date.now() - startedAt);
       const suffix = detail ? ` - ${detail}` : "";
-      console.log(`${dim(timestamp())} [${statusLabel(status)}] ${label}${suffix} ${dim(`(${duration})`)}`);
+      console.log(
+        `${dim(timestamp())} [${statusLabel(status)}] ${label}${suffix} ${dim(`(${duration})`)}`
+      );
     },
   };
 };

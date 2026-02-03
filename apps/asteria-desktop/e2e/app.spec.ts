@@ -146,8 +146,7 @@ test.describe("Asteria Desktop App", () => {
                 previews: [
                   {
                     kind: "normalized",
-                    path:
-                      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6fYdS0AAAAASUVORK5CYII=",
+                    path: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6fYdS0AAAAASUVORK5CYII=",
                     width: 100,
                     height: 100,
                   },

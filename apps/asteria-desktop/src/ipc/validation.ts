@@ -91,7 +91,12 @@ const validateNormalizationGuides = (guides: unknown): void => {
     const gridRecord = baselineGrid as Record<string, unknown>;
     assertOptionalRange(gridRecord.spacingPx, "normalization.guides.baselineGrid.spacingPx", 0);
     assertOptionalRange(gridRecord.offsetPx, "normalization.guides.baselineGrid.offsetPx", 0);
-    assertOptionalRange(gridRecord.angleDeg, "normalization.guides.baselineGrid.angleDeg", -360, 360);
+    assertOptionalRange(
+      gridRecord.angleDeg,
+      "normalization.guides.baselineGrid.angleDeg",
+      -360,
+      360
+    );
     assertOptionalRange(
       gridRecord.confidence,
       "normalization.guides.baselineGrid.confidence",

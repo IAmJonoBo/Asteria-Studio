@@ -10,9 +10,7 @@
       "layoutConfidence": 0.965670023739691,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence"
-        ]
+        "reasons": ["low-shading-confidence"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -44,10 +42,7 @@
       "layoutConfidence": 0.9708205033415949,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -79,10 +74,7 @@
       "layoutConfidence": 0.9663751903434235,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -114,10 +106,7 @@
       "layoutConfidence": 0.970820491553813,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -149,10 +138,7 @@
       "layoutConfidence": 0.970817546957309,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -184,11 +170,7 @@
       "layoutConfidence": 0.6362585066888071,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-skew-confidence",
-          "low-shading-confidence",
-          "residual-skew-0.20deg"
-        ]
+        "reasons": ["low-skew-confidence", "low-shading-confidence", "residual-skew-0.20deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -220,10 +202,7 @@
       "layoutConfidence": 0.8233494945870348,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-skew-confidence",
-          "low-shading-confidence"
-        ]
+        "reasons": ["low-skew-confidence", "low-shading-confidence"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -255,10 +234,7 @@
       "layoutConfidence": 0.9632807563378243,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -290,10 +266,7 @@
       "layoutConfidence": 0.9637859118402752,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -361,10 +334,7 @@
       "layoutConfidence": 0.9708320425265452,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [
@@ -396,10 +366,7 @@
       "layoutConfidence": 0.969889301348576,
       "qualityGate": {
         "accepted": false,
-        "reasons": [
-          "low-shading-confidence",
-          "residual-skew-8.00deg"
-        ]
+        "reasons": ["low-shading-confidence", "residual-skew-8.00deg"]
       },
       "reason": "quality-gate",
       "previews": [

@@ -30,9 +30,7 @@
         },
         "ocr": {
           "engine": "tesseract",
-          "languages": [
-            "eng"
-          ]
+          "languages": ["eng"]
         },
         "detector": {
           "name": "layout-detector",
@@ -139,10 +137,7 @@
         }
       },
       "export": {
-        "formats": [
-          "png",
-          "tiff"
-        ],
+        "formats": ["png", "tiff"],
         "include_pdf": true,
         "include_json_sidecars": true,
         "naming": "{projectId}_{pageId}_{runId}"
@@ -282,120 +277,84 @@
       "checksum": "76d301add1bb83c56a3ef39fa51c85c26b1bac0c98280594f894a9643f3cb054",
       "dhash": "f9e8f0fcfcf4f8fe",
       "normalizedFile": "p01_clean_single.png",
-      "previews": [
-        "p01_clean_single-source.png",
-        "p01_clean_single-normalized.png"
-      ]
+      "previews": ["p01_clean_single-source.png", "p01_clean_single-normalized.png"]
     },
     {
       "pageId": "p03_running_head_folio",
       "checksum": "7d867441051653dafcb68b96b591e46eeeed8021a8aea76a66942cfa17bb9a44",
       "dhash": "f0f4fcfcf4f4f8f8",
       "normalizedFile": "p03_running_head_folio.png",
-      "previews": [
-        "p03_running_head_folio-source.png",
-        "p03_running_head_folio-normalized.png"
-      ]
+      "previews": ["p03_running_head_folio-source.png", "p03_running_head_folio-normalized.png"]
     },
     {
       "pageId": "p02_clean_double",
       "checksum": "f0d3c80e4b9279de25eef320c45f331cc5c1596cafaa1a9a45a8023004c103d9",
       "dhash": "f276e6e4ececccc8",
       "normalizedFile": "p02_clean_double.png",
-      "previews": [
-        "p02_clean_double-source.png",
-        "p02_clean_double-normalized.png"
-      ]
+      "previews": ["p02_clean_double-source.png", "p02_clean_double-normalized.png"]
     },
     {
       "pageId": "p05_footnotes_marginalia",
       "checksum": "53e2cf4b4b75c0c75f87e1220626c3dbbda2493b0ced00c4c720820408a78a13",
       "dhash": "78f8fcf4f8f8f8f8",
       "normalizedFile": "p05_footnotes_marginalia.png",
-      "previews": [
-        "p05_footnotes_marginalia-source.png",
-        "p05_footnotes_marginalia-normalized.png"
-      ]
+      "previews": ["p05_footnotes_marginalia-source.png", "p05_footnotes_marginalia-normalized.png"]
     },
     {
       "pageId": "p04_ornament",
       "checksum": "b2cb788916ec0551177fcbeacd3fe117bdfe79b97c9e1b2a7ffa5dbfad48d9d0",
       "dhash": "f9f8f0f4f4fcfcfc",
       "normalizedFile": "p04_ornament.png",
-      "previews": [
-        "p04_ornament-source.png",
-        "p04_ornament-normalized.png"
-      ]
+      "previews": ["p04_ornament-source.png", "p04_ornament-normalized.png"]
     },
     {
       "pageId": "p06_blank_verso",
       "checksum": "293ec5bbc098e00b57ef7b6c96c456ca8c2930b1e2bef4b2bc272c79453377e8",
       "dhash": "8080808080808080",
       "normalizedFile": "p06_blank_verso.png",
-      "previews": [
-        "p06_blank_verso-source.png",
-        "p06_blank_verso-normalized.png"
-      ]
+      "previews": ["p06_blank_verso-source.png", "p06_blank_verso-normalized.png"]
     },
     {
       "pageId": "p08_shadow_left",
       "checksum": "f011d726ba069933ba7d3d605e9dccfdd58ff79edcf4e9c5d14949f3ec730b02",
       "dhash": "f9e8f8f4fcfc7cfe",
       "normalizedFile": "p08_shadow_left.png",
-      "previews": [
-        "p08_shadow_left-source.png",
-        "p08_shadow_left-normalized.png"
-      ]
+      "previews": ["p08_shadow_left-source.png", "p08_shadow_left-normalized.png"]
     },
     {
       "pageId": "p09_shadow_right",
       "checksum": "cdca87c364849cb69ba5356dc65a8a5a3f4b4ca51f566c5858023a81136b7cfd",
       "dhash": "f8fefcfcb4f4f8e8",
       "normalizedFile": "p09_shadow_right.png",
-      "previews": [
-        "p09_shadow_right-source.png",
-        "p09_shadow_right-normalized.png"
-      ]
+      "previews": ["p09_shadow_right-source.png", "p09_shadow_right-normalized.png"]
     },
     {
       "pageId": "p07_plate",
       "checksum": "ae6ec27ad0b290ce00591faa63b1c8f209f92abbe589f048da76d822055e3070",
       "dhash": "fefefefefefefefe",
       "normalizedFile": "p07_plate.png",
-      "previews": [
-        "p07_plate-source.png",
-        "p07_plate-normalized.png"
-      ]
+      "previews": ["p07_plate-source.png", "p07_plate-normalized.png"]
     },
     {
       "pageId": "p11_curved_warp",
       "checksum": "4d32952e69eee76581f5f904f0943088a168325a3f7a04d4b419767f967f8748",
       "dhash": "787e7cfcf4fcf8f8",
       "normalizedFile": "p11_curved_warp.png",
-      "previews": [
-        "p11_curved_warp-source.png",
-        "p11_curved_warp-normalized.png"
-      ]
+      "previews": ["p11_curved_warp-source.png", "p11_curved_warp-normalized.png"]
     },
     {
       "pageId": "p12_rot_perspective",
       "checksum": "345d449426cd30e803e51fb2e7a4dce849c7b644b7c9431c17f63c0de858bc77",
       "dhash": "f9e9f8f4fcfcf8fe",
       "normalizedFile": "p12_rot_perspective.png",
-      "previews": [
-        "p12_rot_perspective-source.png",
-        "p12_rot_perspective-normalized.png"
-      ]
+      "previews": ["p12_rot_perspective-source.png", "p12_rot_perspective-normalized.png"]
     },
     {
       "pageId": "p10_spread_dark_gutter",
       "checksum": "32dda699dca8a0ce0f306bd75fdd4098c33ea32953c6a479e78878dc15267d6b",
       "dhash": "6cccccceeee6e6e4",
       "normalizedFile": "p10_spread_dark_gutter.png",
-      "previews": [
-        "p10_spread_dark_gutter-source.png",
-        "p10_spread_dark_gutter-normalized.png"
-      ]
+      "previews": ["p10_spread_dark_gutter-source.png", "p10_spread_dark_gutter-normalized.png"]
     }
   ]
 }

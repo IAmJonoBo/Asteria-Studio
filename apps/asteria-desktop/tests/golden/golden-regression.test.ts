@@ -94,9 +94,11 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 };
 
-
 const toImageData = async (filePath: string) => {
-  const { data, info } = await sharp(filePath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(filePath)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   return { data: new Uint8Array(data), width: info.width, height: info.height };
 };
 
@@ -113,14 +115,7 @@ const writeDiffImage = async (
   diffPath: string
 ) => {
   const diff = Buffer.alloc(expected.width * expected.height * 4);
-  pixelmatch(
-    expected.data,
-    actual.data,
-    diff,
-    expected.width,
-    expected.height,
-    { threshold: 0.1 }
-  );
+  pixelmatch(expected.data, actual.data, diff, expected.width, expected.height, { threshold: 0.1 });
   await sharp(diff, { raw: { width: expected.width, height: expected.height, channels: 4 } })
     .png()
     .toFile(diffPath);
@@ -175,7 +170,10 @@ const computePHash = (data: Uint8Array, width: number, height: number): string =
   return hash;
 };
 
-const matchesExpectedReasons = (expected: string[], actual: string[]): { ok: boolean; missing: string[] } => {
+const matchesExpectedReasons = (
+  expected: string[],
+  actual: string[]
+): { ok: boolean; missing: string[] } => {
   const missing: string[] = [];
   for (const reason of expected) {
     if (reason.includes("*")) {
@@ -229,9 +227,9 @@ describe.sequential("golden corpus regression", () => {
 
     const runDir = getRunDir(runRoot, runId);
     const reviewQueuePath = getRunReviewQueuePath(runDir);
-    const reviewQueue = await readJson<{ items: Array<{ pageId: string; qualityGate: { reasons: string[] } }> }>(
-      reviewQueuePath
-    );
+    const reviewQueue = await readJson<{
+      items: Array<{ pageId: string; qualityGate: { reasons: string[] } }>;
+    }>(reviewQueuePath);
     const reasonsByPage = new Map(
       reviewQueue.items.map((item) => [item.pageId, item.qualityGate.reasons])
     );
@@ -248,9 +246,7 @@ describe.sequential("golden corpus regression", () => {
 
       const expectSplit =
         truth.shouldSplit && !truth.expectedReviewReasons.includes("spread-split-low-confidence");
-      const resolvedPageIds = expectSplit
-        ? [`${entry.id}_L`, `${entry.id}_R`]
-        : [entry.id];
+      const resolvedPageIds = expectSplit ? [`${entry.id}_L`, `${entry.id}_R`] : [entry.id];
 
       for (const pageId of resolvedPageIds) {
         const expectedImage = path.join(expectedDir, "normalized", `${pageId}.png`);
@@ -277,9 +273,21 @@ describe.sequential("golden corpus regression", () => {
 
         expect(actualSidecarJson.pageId).toBe(pageId);
         expect(actualSidecarJson.source.checksum).toBe(expectedSidecarJson.source.checksum);
-        expectClose(actualSidecarJson.metrics.backgroundStd, expectedSidecarJson.metrics.backgroundStd, 0.5);
-        expectClose(actualSidecarJson.metrics.maskCoverage, expectedSidecarJson.metrics.maskCoverage, 0.02);
-        expectClose(actualSidecarJson.metrics.shadowScore, expectedSidecarJson.metrics.shadowScore, 0.5);
+        expectClose(
+          actualSidecarJson.metrics.backgroundStd,
+          expectedSidecarJson.metrics.backgroundStd,
+          0.5
+        );
+        expectClose(
+          actualSidecarJson.metrics.maskCoverage,
+          expectedSidecarJson.metrics.maskCoverage,
+          0.02
+        );
+        expectClose(
+          actualSidecarJson.metrics.shadowScore,
+          expectedSidecarJson.metrics.shadowScore,
+          0.5
+        );
 
         for (let i = 0; i < 4; i++) {
           expectClose(

@@ -17,8 +17,7 @@ const findRepoRoot = (startDir) => {
 };
 
 const supportsColor = Boolean(process.stdout.isTTY);
-const colorize = (code) => (value) =>
-  supportsColor ? `\u001b[${code}m${value}\u001b[0m` : value;
+const colorize = (code) => (value) => (supportsColor ? `\u001b[${code}m${value}\u001b[0m` : value);
 const dim = colorize("2");
 const green = colorize("32");
 const yellow = colorize("33");
@@ -68,7 +67,9 @@ const startStep = (label) => {
   return (status = "ok", detail) => {
     const duration = formatDuration(Date.now() - startedAt);
     const suffix = detail ? ` - ${detail}` : "";
-    console.log(`${dim(timestamp())} [${statusLabel(status)}] ${label}${suffix} ${dim(`(${duration})`)}`);
+    console.log(
+      `${dim(timestamp())} [${statusLabel(status)}] ${label}${suffix} ${dim(`(${duration})`)}`
+    );
   };
 };
 

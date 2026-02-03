@@ -17,10 +17,10 @@ If your system `python3` is too new for some dependencies, prefer `python3.11`.
 
 ## Adding a new case
 
-1) Add a new page spec in `generate.py` with a unique id.
-2) Provide truth fields (bounds, gutter, baseline grid, ornaments).
-3) Update the manifest entry with tags and SSIM threshold.
-4) Run `pnpm golden:bless` to regenerate expected outputs.
+1. Add a new page spec in `generate.py` with a unique id.
+2. Provide truth fields (bounds, gutter, baseline grid, ornaments).
+3. Update the manifest entry with tags and SSIM threshold.
+4. Run `pnpm golden:bless` to regenerate expected outputs.
 
 ## Determinism
 

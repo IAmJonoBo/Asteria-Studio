@@ -12,18 +12,8 @@
   },
   "dpi": 72,
   "normalization": {
-    "cropBox": [
-      0,
-      0,
-      2174,
-      3074
-    ],
-    "pageMask": [
-      6,
-      5,
-      2170,
-      3069
-    ],
+    "cropBox": [0, 0, 2174, 3074],
+    "pageMask": [6, 5, 2170, 3069],
     "dpiSource": "metadata",
     "bleed": 12.499975,
     "trim": 0,
@@ -55,137 +45,74 @@
     {
       "id": "p05_footnotes_marginalia-page-bounds",
       "type": "page_bounds",
-      "bbox": [
-        0,
-        0,
-        2174,
-        3074
-      ],
+      "bbox": [0, 0, 2174, 3074],
       "confidence": 0.6,
       "source": "local",
-      "flags": [
-        "derived"
-      ]
+      "flags": ["derived"]
     },
     {
       "id": "p05_footnotes_marginalia-text-block",
       "type": "text_block",
-      "bbox": [
-        6,
-        5,
-        2170,
-        3069
-      ],
+      "bbox": [6, 5, 2170, 3069],
       "confidence": 0.55,
       "source": "local",
-      "flags": [
-        "mask-derived"
-      ]
+      "flags": ["mask-derived"]
     },
     {
       "id": "p05_footnotes_marginalia-title",
       "type": "title",
-      "bbox": [
-        266,
-        66,
-        1910,
-        434
-      ],
+      "bbox": [266, 66, 1910, 434],
       "confidence": 0.28,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-running-head",
       "type": "running_head",
-      "bbox": [
-        222,
-        5,
-        1954,
-        250
-      ],
+      "bbox": [222, 5, 1954, 250],
       "confidence": 0.25,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-folio",
       "type": "folio",
-      "bbox": [
-        915,
-        2763,
-        1261,
-        3008
-      ],
+      "bbox": [915, 2763, 1261, 3008],
       "confidence": 0.22,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-ornament",
       "type": "ornament",
-      "bbox": [
-        915,
-        557,
-        1261,
-        740
-      ],
+      "bbox": [915, 557, 1261, 740],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-drop-cap",
       "type": "drop_cap",
-      "bbox": [
-        49,
-        557,
-        222,
-        985
-      ],
+      "bbox": [49, 557, 222, 985],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-footnote",
       "type": "footnote",
-      "bbox": [
-        114,
-        2640,
-        2062,
-        3008
-      ],
+      "bbox": [114, 2640, 2062, 3008],
       "confidence": 0.2,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     },
     {
       "id": "p05_footnotes_marginalia-marginalia",
       "type": "marginalia",
-      "bbox": [
-        6,
-        771,
-        179,
-        2303
-      ],
+      "bbox": [6, 771, 179, 2303],
       "confidence": 0.18,
       "source": "local",
-      "flags": [
-        "heuristic"
-      ]
+      "flags": ["heuristic"]
     }
   ],
   "metrics": {

@@ -9,6 +9,7 @@
 ## 1) Goals
 
 ### Product goals
+
 1. **InDesign-inspired structural tools** for review and refinement:
    - baseline grid, rulers, margin/column guides, gutter, head/footer bands, ornament anchors.
 2. **Confidence-gated intelligence**:
@@ -21,12 +22,14 @@
    - every user correction becomes structured training signal with deltas vs auto, labels, and provenance.
 
 ### Engineering goals
+
 - Deterministic outputs; run-scoped artifacts; reproducible config snapshots.
 - Impeccable QA: unit + integration + golden regressions + minimal E2E.
 
 ---
 
 ## 2) Non-goals (explicitly out of scope for this tranche)
+
 - Security hardening, sandboxing, external threat model.
 - Full OCR, semantic text reconstruction, EPUB reflow.
 - End-to-end learned models for everything (heuristics + light ML OK; training loop prepares future ML).
@@ -50,6 +53,7 @@
 ### 4.1 Guides Mode (Review Queue)
 
 **Add a dedicated “Guides” mode** in Review Queue, including:
+
 - Baseline grid + baseline peaks (when applicable)
 - Rulers (x/y) with tick marks + optional labels (zoom-dependent)
 - Margin guides (box)
@@ -59,6 +63,7 @@
 - Ornament anchors (hash-matched repeating decorators)
 
 **Interactions:**
+
 - Layer toggles (Groups: Structural Guides, Detected Elements, Diagnostics)
 - Solo layer (Alt-click layer toggle)
 - Group opacity sliders
@@ -73,6 +78,7 @@
 - “Hold modifier to reveal shortcuts” overlay on demand.
 
 **Editable controls (Baseline grid panel):**
+
 - Spacing (slider + numeric input)
 - Offset/origin (slider + numeric input + draggable origin line)
 - Angle (nudge ±0.1°, numeric input)
@@ -81,6 +87,7 @@
 - Apply override (persist to run + training signal)
 
 **Apply scope (optional but high impact):**
+
 - Apply to page only (default)
 - Apply to selection (multi-select pages)
 - Apply to section/template (advanced; see Templates below)
@@ -90,42 +97,50 @@
 ### 4.2 Visual Design System for Guides (clean, non-cluttered)
 
 #### Tokens (CSS variables)
+
 **Core guide palette (neutral, structural):**
+
 - `--guide-passive: rgba(148,163,184,0.22)`
 - `--guide-major: rgba(148,163,184,0.32)`
 - `--guide-hover: rgba(59,130,246,0.55)`
 - `--guide-active: rgba(59,130,246,0.85)`
 
 **Snap feedback (temporary during drag only):**
+
 - `--snap-line: rgba(34,211,238,0.95)`
 - `--snap-glow: rgba(34,211,238,0.35)`
 
 **Band fills (very light):**
+
 - `--band-headfoot: rgba(236,72,153,0.08)`
 - `--band-gutter: rgba(239,68,68,0.08)`
 
 **Label pills (theme-aware):**
+
 - Light mode: `rgba(255,255,255,0.75)`
 - Dark mode: `rgba(17,24,39,0.65)`
 
 #### Stroke widths & dash patterns (screen pixels; SVG)
-| Layer | Stroke | Dash | Notes |
-|---|---:|---|---|
-| Baseline grid (minor) | 1.0 | solid | hidden below zoom 0.8 |
-| Baseline grid (major every N=4) | 1.0 | solid | slightly higher opacity |
-| Baseline origin line | 2.0 | solid | draggable + label |
-| Margins | 1.5 | `6 4` | dashed |
-| Columns | 1.5 | `2 4` | dot-dash feel |
-| Gutter centreline | 1.5 | `10 6` | only when relevant |
-| Ruler ticks | 1.0 | solid | labels only > 1.6 zoom |
-| Smart snap guide | 2.0 | solid | add glow filter |
+
+| Layer                           | Stroke | Dash   | Notes                   |
+| ------------------------------- | -----: | ------ | ----------------------- |
+| Baseline grid (minor)           |    1.0 | solid  | hidden below zoom 0.8   |
+| Baseline grid (major every N=4) |    1.0 | solid  | slightly higher opacity |
+| Baseline origin line            |    2.0 | solid  | draggable + label       |
+| Margins                         |    1.5 | `6 4`  | dashed                  |
+| Columns                         |    1.5 | `2 4`  | dot-dash feel           |
+| Gutter centreline               |    1.5 | `10 6` | only when relevant      |
+| Ruler ticks                     |    1.0 | solid  | labels only > 1.6 zoom  |
+| Smart snap guide                |    2.0 | solid  | add glow filter         |
 
 #### Level-of-detail by zoom (avoid GIS clutter)
+
 - Zoom < 0.8: only major guides + origin lines; no labels
 - 0.8–1.6: full guides; labels only for active/hover
 - > 1.6: show ruler labels + optional guide labels
 
 #### Interaction states
+
 - `passive` default (low opacity)
 - `hover` (medium opacity)
 - `active/selected` (high opacity, thicker stroke where applicable)
@@ -136,11 +151,13 @@
 ### 4.3 Baseline grid computation (make “auto” trustworthy)
 
 #### Inputs
+
 - Cropped text ROI (from content mask / layout blocks)
 - Row projection signal (binarised or edge-based)
 - Optional orientation signal (if residual skew/angle is known)
 
 #### Outputs (per page)
+
 - `metrics.baseline.peaksY?: number[]` (baseline candidate positions in normalized coords)
 - `normalization.guides.baselineGrid`:
   - `spacingPx`
@@ -150,14 +167,18 @@
   - `source: "auto" | "user"`
 
 #### Confidence gating
+
 Baseline grid should render only if:
+
 - Page type is text-dominant (see 4.5)
 - Peaks are consistent (median absolute deviation below threshold)
 - Peak sharpness/contrast meets threshold
 - Minimum peak count met (avoid sparse pages)
 
 #### User adjustments
+
 User edits write to:
+
 - `overrides.guides.baselineGrid` (same shape)
 - Training signals: record absolute + delta vs auto, plus “confirmed” boolean.
 
@@ -166,12 +187,14 @@ User edits write to:
 ### 4.4 Smart snapping (“confidence-weighted magnetism”)
 
 #### Snapping sources (priority)
+
 1. **Template/master guides & book priors** (strong, stable)
 2. **Detected elements** with high confidence (heads/folios/ornaments/columns)
 3. **Baseline grid** (only if confident and relevant)
 4. **User guides** (always honoured)
 
 #### Snap zone model (avoid sticky behaviour)
+
 - Each snap target defines a **snap radius** in px.
 - Cursor/handle snaps only when within radius.
 - Provide:
@@ -179,12 +202,15 @@ User edits write to:
   - Temporary disable while dragging (hold Ctrl/Cmd)
 
 #### Snap feedback
+
 - Show Smart Guide lines only during drag:
   - snap line + glow
   - optional small tooltip: “Snapped to: Baseline / Column / Template guide”
 
 #### Config
+
 Add config keys:
+
 - `snapping.enabled` (default true)
 - `snapping.radiusPx` (default 6–10)
 - `snapping.minConfidence` per source type
@@ -195,10 +221,13 @@ Add config keys:
 ### 4.5 Page/layout typing + “master page” templates
 
 #### Objective
+
 Accurately detect page/layout types and systematise repeated structures (InDesign-like “master pages”).
 
 #### Approach: features → clustering → labels
+
 Compute measurable features and cluster pages into templates:
+
 - text density heatmaps / projection profiles
 - column count and widths (valley detection)
 - head/footer band presence (repeatability)
@@ -209,6 +238,7 @@ Compute measurable features and cluster pages into templates:
 - spread likelihood / gutter signature
 
 Cluster pages → create **template objects**:
+
 - margin box
 - column guides
 - header/footer bands
@@ -216,11 +246,13 @@ Cluster pages → create **template objects**:
 - ornament anchor expectations
 
 Assign each page:
+
 - `pageType` (enum)
 - `templateId`
 - per-template confidence
 
 #### Page type taxonomy (initial)
+
 - `blank_or_near_blank`
 - `body_1col`
 - `body_2col`
@@ -233,6 +265,7 @@ Assign each page:
 - `spread`
 
 #### Template editor (UI)
+
 - Template inspector (read-only first):
   - preview representative pages
   - show guides
@@ -248,12 +281,15 @@ Assign each page:
 **Rule:** any user change becomes structured training signal.
 
 #### Training bundle layout (run-scoped)
+
 `runs/<runId>/training/`
+
 - `page/<pageId>.json` training record
 - `template/<templateId>.json` (if template edits)
 - `manifest.json` listing records + provenance
 
 #### Training record fields (page)
+
 - `auto.guides.baselineGrid` (if present)
 - `final.guides.baselineGrid`
 - `delta.guides.baselineGrid` (spacing/offset/angle)
@@ -263,6 +299,7 @@ Assign each page:
 - `timestamp`, `appVersion`, `configHash`, `runId`
 
 #### Training record fields (template)
+
 - template guide definitions (final)
 - list of pages applied
 - deltas vs auto template
@@ -272,34 +309,40 @@ Assign each page:
 ## 5) Implementation tasks (Codex-ready)
 
 ### 5.1 Fix run-scoping end-to-end
+
 - Ensure **all writes** (normalized, previews, overlays, sidecars, manifests, review queues) are run-scoped.
 - Ensure **all reads** in IPC and renderer are run-aware.
 - Add tests that fail if global output paths are used.
 
 ### 5.2 Guides rendering system
+
 - Implement a guide layer framework:
   - layer registry suggests: id, group, defaultVisible, renderFn, hitTestFn, editableFn
 - Implement tokenised styling via CSS vars.
 - Implement LOD by zoom.
 
 ### 5.3 Baseline grid compute + UI editor
+
 - Compute `peaksY`, spacing, offset, confidence.
 - Render baseline grid + peaks.
 - Implement Baseline Grid panel and persist overrides.
 - Update training signal export on submit-review.
 
 ### 5.4 Snapping engine
+
 - Implement a central snapping engine used by all draggable tools.
 - Add smart guide feedback while dragging.
 - Add config for snap radii/conf thresholds.
 
 ### 5.5 Template system
+
 - Implement feature extraction and clustering.
 - Persist templates in run manifest (and later project-level caches).
 - Add template inspector UI.
 - Add apply-to-template controls for guides and training output.
 
 ### 5.6 Preview and performance
+
 - Progressive previews:
   - low-res first, refine.
 - Avoid blocking renderer:
@@ -311,23 +354,27 @@ Assign each page:
 ## 6) QA / Testing requirements
 
 ### Unit tests
+
 - Baseline peak detection determinism (seeded fixtures)
 - Coordinate mapping (normalized px ↔ preview coords)
 - Snapping engine: snap-zone behaviour, priority ordering, disable modifier
 
 ### Integration tests
+
 - End-to-end artifact scoping: two runs must not collide
 - IPC run-aware fetch: fetch-page and fetch-sidecar read correct runDir
 - Apply override → sidecar merge → review UI reflects changes
 - Submit review writes training bundle with baseline grid deltas
 
 ### Golden regressions
+
 - Add at least 1–2 pages in golden corpus where baseline grid is expected.
 - Validate:
   - guide JSON deterministically, and/or
   - overlay raster diffs (SSIM or pixelmatch) if available.
 
 ### E2E smoke (Playwright)
+
 - Import → start run → open review → toggle guides → adjust baseline → apply → submit → export.
 
 ---
@@ -335,6 +382,7 @@ Assign each page:
 ## 7) Config and docs
 
 ### Config
+
 - Add/extend config sections:
   - `steps.baseline_grid` (confidence floor, peak params)
   - `snapping.*` (radius, weighting, min confidence)
@@ -342,6 +390,7 @@ Assign each page:
   - `guides.lod.*` (zoom thresholds)
 
 ### Docs to update
+
 - `docs/style.md` (guide tokens + line specs)
 - `docs/ux.md` (Guides mode, shortcuts, snapping)
 - `docs/testing_golden_corpus.md` (baseline cases + diff interpretation)
@@ -375,7 +424,7 @@ Assign each page:
 ---
 
 ## References (design inspiration; not dependencies)
+
 - Adobe InDesign: grids, guides, Snap To Guides behaviour, Smart Guides concepts.
 - WCAG 2.2 focus visibility/appearance principles for keyboard-first UIs.
 - Electron performance principles: keep heavy work off renderer thread.
-
