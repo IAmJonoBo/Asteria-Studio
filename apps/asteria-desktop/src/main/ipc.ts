@@ -18,6 +18,7 @@ import type {
 import fs from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 import sharp from "sharp";
 import {
   validateExportFormats,
@@ -52,6 +53,9 @@ import { writeJsonAtomic } from "./file-utils.js";
 import { importCorpus, listProjects, normalizeCorpusPath } from "./projects.js";
 
 type ExportFormat = "png" | "tiff" | "pdf";
+
+export const buildBundleFileUrl = (filePath: string, pathModule: typeof path = path): string =>
+  pathToFileURL(pathModule.resolve(filePath)).toString();
 
 const readTemplateSignals = async (
   templateDir: string
@@ -1034,7 +1038,7 @@ export function registerIpcHandlers(): void {
           auto,
           final,
           delta,
-          sidecarPath: `sidecars/${pageId}.json`,
+          sidecarPath: buildBundleFileUrl(sidecarPath),
           provenance,
         };
         trainingSignals.push(trainingSignal);

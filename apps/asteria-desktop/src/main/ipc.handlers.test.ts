@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { getRunDir, getRunReviewQueuePath, getRunSidecarPath } from "./run-paths.js";
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>());
@@ -64,7 +65,7 @@ vi.mock("./pipeline-config", () => ({
 }));
 vi.mock("./projects", () => ({ listProjects, importCorpus }));
 
-import { registerIpcHandlers } from "./ipc.js";
+import { buildBundleFileUrl, registerIpcHandlers } from "./ipc.js";
 
 describe("IPC handler registration", () => {
   beforeEach(() => {
@@ -867,6 +868,7 @@ describe("IPC handler registration", () => {
     expect(writeCall).toBeDefined();
     if (!writeCall) throw new Error("writeCall not found");
     const written = JSON.parse(writeCall[1] as string);
+    const expectedSidecarUrl = buildBundleFileUrl(getRunSidecarPath(runDir, "page1"));
     expect(written).toMatchObject({
       runId: "run-train-2",
       pageId: "page1",
@@ -876,7 +878,7 @@ describe("IPC handler registration", () => {
       appVersion: "1.0.0",
       configHash: "abc123",
       templateIds: ["template1"],
-      sidecarPath: "sidecars/page1.json",
+      sidecarPath: expectedSidecarUrl,
     });
     expect(written.timestamps).toHaveProperty("submittedAt");
     expect(written.timestamps).toHaveProperty("appliedAt");
@@ -934,6 +936,28 @@ describe("IPC handler registration", () => {
       configHash: "abc123",
       pages: expect.arrayContaining(["page1", "page2"]),
       confirmedPages: expect.arrayContaining(["page1", "page2"]),
+    });
+  });
+
+  it("buildBundleFileUrl emits file URLs for posix and windows paths", () => {
+    const fixtures = [
+      {
+        label: "posix",
+        pathModule: path.posix,
+        root: "/tmp/pipeline-results/run-1",
+      },
+      {
+        label: "win32",
+        pathModule: path.win32,
+        root: "C:\\pipeline-results\\run-1",
+      },
+    ];
+
+    fixtures.forEach(({ pathModule, root }) => {
+      const sidecarPath = pathModule.join(root, "sidecars", "page-1.json");
+      const expected = pathToFileURL(pathModule.resolve(sidecarPath)).toString();
+      expect(buildBundleFileUrl(sidecarPath, pathModule)).toBe(expected);
+      expect(expected).toMatch(/^file:/);
     });
   });
 
