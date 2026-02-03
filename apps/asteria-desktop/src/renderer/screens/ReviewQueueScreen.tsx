@@ -1821,6 +1821,7 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
   };
 
   useKeyboardShortcuts([
+    // Navigation
     {
       key: "j",
       handler: (): void => setSelectedIndex(Math.min(selectedIndex + 1, queuePages.length - 1)),
@@ -1831,6 +1832,8 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       handler: (): void => setSelectedIndex(Math.max(selectedIndex - 1, 0)),
       description: "Previous page",
     },
+    
+    // Decision actions
     {
       key: "a",
       handler: handleAccept,
@@ -1852,17 +1855,19 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       description: "Undo last decision",
     },
     {
-      key: " ",
-      handler: (): void => setOverlaysVisible(!overlaysVisible),
-      description: "Toggle overlays",
-    },
-    {
       key: "Enter",
       ctrlKey: true,
       handler: (): void => {
         void handleSubmitReview();
       },
       description: "Submit review decisions",
+    },
+    
+    // View controls
+    {
+      key: " ",
+      handler: (): void => setOverlaysVisible(!overlaysVisible),
+      description: "Toggle overlays",
     },
     {
       key: "+",
@@ -1879,6 +1884,8 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       handler: resetView,
       description: "Reset view",
     },
+    
+    // Rotation controls
     {
       key: "[",
       handler: (): void => rotateBy(-0.5),
@@ -1901,6 +1908,8 @@ export function ReviewQueueScreen({ runId }: Readonly<ReviewQueueScreenProps>): 
       handler: (): void => rotateBy(0.1),
       description: "Micro-rotate clockwise",
     },
+    
+    // Pan controls
     {
       key: "ArrowUp",
       shiftKey: true,
