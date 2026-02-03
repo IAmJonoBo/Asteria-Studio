@@ -785,7 +785,6 @@ describe("IPC handler registration", () => {
 
     const outputDir = path.join(process.cwd(), "pipeline-results");
     const runDir = getRunDir(outputDir, "run-train-2");
-    const trainingPageDir = path.join(runDir, "training", "page");
 
     const writeCall = writeFile.mock.calls.find((call) =>
       String(call[0]).includes("training/page") && String(call[0]).includes("page1.json")
@@ -842,7 +841,6 @@ describe("IPC handler registration", () => {
 
     const outputDir = path.join(process.cwd(), "pipeline-results");
     const runDir = getRunDir(outputDir, "run-train-3");
-    const trainingTemplateDir = path.join(runDir, "training", "template");
 
     const writeCall = writeFile.mock.calls.find((call) =>
       String(call[0]).includes("training/template") && String(call[0]).includes("template1.json")
@@ -889,7 +887,6 @@ describe("IPC handler registration", () => {
 
     const outputDir = path.join(process.cwd(), "pipeline-results");
     const runDir = getRunDir(outputDir, "run-train-4");
-    const trainingDir = path.join(runDir, "training");
 
     const writeCall = writeFile.mock.calls.find((call) =>
       String(call[0]).includes("training") && String(call[0]).includes("manifest.json")
