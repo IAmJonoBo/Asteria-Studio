@@ -84,6 +84,12 @@ pnpm -C apps/asteria-desktop test:e2e
 
 # Type checking
 pnpm -C apps/asteria-desktop typecheck
+
+# Build production assets + launcher
+pnpm -C apps/asteria-desktop build
+
+# Run built app (macOS/Linux)
+apps/asteria-desktop/dist/asteria-studio
 ```
 
 ### Pipeline Evaluation

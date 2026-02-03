@@ -66,8 +66,8 @@ src/
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm 8+
+- Node.js 24 LTS
+- pnpm 10
 - macOS, Windows, or Linux
 
 ### Commands
@@ -81,6 +81,9 @@ pnpm dev
 
 # Build for production
 pnpm build
+
+# Run built app (macOS/Linux)
+dist/asteria-studio
 
 # Package app (electron-builder)
 pnpm package
@@ -119,8 +122,8 @@ pnpm pipeline:export <projectRoot> [count]
 
 ### Test Suite
 
-- **91 tests** across 16 files
-- **89% coverage** (88.61% statements, 75% branches, 82.74% functions, 89.17% lines)
+- **190 tests** across 31 files
+- **~92% coverage** (91.90% statements, 77.33% branches, 91.82% functions, 93.81% lines)
 - **Vitest** for unit/integration, **Playwright** for E2E
 - **Testing Library** for accessible component testing
 
