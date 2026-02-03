@@ -105,9 +105,7 @@ const inferTargetMetrics = async (
   }
 
   const inferredWidthsMm = pixelSamples.map((sample) => (sample.width / config.targetDpi) * 25.4);
-  const inferredHeightsMm = pixelSamples.map(
-    (sample) => (sample.height / config.targetDpi) * 25.4
-  );
+  const inferredHeightsMm = pixelSamples.map((sample) => (sample.height / config.targetDpi) * 25.4);
   const inferredDimensionsMm = {
     width: round(median(inferredWidthsMm)),
     height: round(median(inferredHeightsMm)),

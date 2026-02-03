@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { dialog, ipcMain } from "electron";
 import type { IpcMainInvokeEvent } from "electron";
 import type {
   PipelineRunConfig,
@@ -10,6 +10,7 @@ import type {
   PipelineConfigOverrides,
   PipelineConfigSnapshot,
   RunConfigSnapshot,
+  RunManifestSummary,
   ProjectSummary,
   ImportCorpusRequest,
 } from "../ipc/contracts.js";
@@ -42,7 +43,7 @@ import {
   getSidecarDir,
 } from "./run-paths.js";
 import { writeJsonAtomic } from "./file-utils.js";
-import { importCorpus, listProjects } from "./projects.js";
+import { importCorpus, listProjects, normalizeCorpusPath } from "./projects.js";
 
 type ExportFormat = "png" | "tiff" | "pdf";
 
@@ -130,6 +131,16 @@ export function registerIpcHandlers(): void {
       return scanCorpus(rootPath, options);
     }
   );
+
+  ipcMain.handle("asteria:pick-corpus-dir", async (): Promise<string | null> => {
+    const result = await dialog.showOpenDialog({
+      properties: ["openDirectory"],
+    });
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+    return normalizeCorpusPath(result.filePaths[0]);
+  });
 
   ipcMain.handle("asteria:list-projects", async (): Promise<ProjectSummary[]> => {
     return listProjects();
@@ -351,6 +362,29 @@ export function registerIpcHandlers(): void {
         const raw = await fs.readFile(reportPath, "utf-8");
         const report = JSON.parse(raw) as { configSnapshot?: RunConfigSnapshot };
         return report.configSnapshot ?? null;
+      } catch {
+        return null;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "asteria:get-run-manifest",
+    async (_event: IpcMainInvokeEvent, runId: string): Promise<RunManifestSummary | null> => {
+      validateRunId(runId);
+      const outputDir = resolveOutputDir();
+      const runDir = await resolveRunDir(outputDir, runId);
+      const manifestPath = getRunManifestPath(runDir);
+      try {
+        const raw = await fs.readFile(manifestPath, "utf-8");
+        const manifest = JSON.parse(raw) as RunManifestSummary;
+        return {
+          runId: manifest.runId ?? runId,
+          status: manifest.status ?? "unknown",
+          exportedAt: manifest.exportedAt ?? "",
+          sourceRoot: manifest.sourceRoot ?? "",
+          count: typeof manifest.count === "number" ? manifest.count : 0,
+        };
       } catch {
         return null;
       }
