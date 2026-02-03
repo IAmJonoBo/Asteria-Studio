@@ -30,6 +30,7 @@ describe("IPC Handlers (Stubs)", () => {
     // Simulate handler response
     const result: PipelineRunResult = {
       runId: `run-${Date.now()}`,
+      runDir: path.join(os.tmpdir(), "asteria-runs", `run-${Date.now()}`),
       status: "running",
       pagesProcessed: 0,
       errors: [],

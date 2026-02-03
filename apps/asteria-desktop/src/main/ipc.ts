@@ -13,9 +13,11 @@ import type {
   RunManifestSummary,
   ProjectSummary,
   ImportCorpusRequest,
+  TemplateTrainingSignal,
 } from "../ipc/contracts.js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import {
   validateExportFormats,
@@ -23,7 +25,9 @@ import {
   validateOverrides,
   validatePageId,
   validatePipelineRunConfig,
+  validateRunDir,
   validateRunId,
+  validateTemplateTrainingSignal,
 } from "../ipc/validation.js";
 import { analyzeCorpus } from "../ipc/corpusAnalysis.js";
 import { scanCorpus } from "../ipc/corpusScanner.js";
@@ -89,7 +93,9 @@ const loadRunDeterminism = async (
   const reportPath = getRunReportPath(runDir);
   try {
     const raw = await fs.readFile(reportPath, "utf-8");
-    const report = JSON.parse(raw) as { determinism?: { appVersion?: string; configHash?: string } };
+    const report = JSON.parse(raw) as {
+      determinism?: { appVersion?: string; configHash?: string };
+    };
     return {
       appVersion: report.determinism?.appVersion ?? "unknown",
       configHash: report.determinism?.configHash ?? "unknown",
@@ -113,6 +119,13 @@ type AdjustmentSummary = {
   elementEdits?: ElementEdit[];
   appliedAt?: string;
   source?: "review";
+};
+type BaselineGridGuide = {
+  spacingPx?: number | null;
+  offsetPx?: number | null;
+  angleDeg?: number | null;
+  snapToPeaks?: boolean;
+  markCorrect?: boolean;
 };
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -141,13 +154,23 @@ const buildElementEdits = (
   const baseArray = Array.isArray(baseElements) ? baseElements : [];
   const baseMap = new Map<string, Record<string, unknown>>();
   for (const element of baseArray) {
-    if (element && typeof element === "object" && "id" in element && typeof element.id === "string") {
+    if (
+      element &&
+      typeof element === "object" &&
+      "id" in element &&
+      typeof element.id === "string"
+    ) {
       baseMap.set(element.id, element as Record<string, unknown>);
     }
   }
   const overrideMap = new Map<string, Record<string, unknown>>();
   for (const element of overrideElements) {
-    if (element && typeof element === "object" && "id" in element && typeof element.id === "string") {
+    if (
+      element &&
+      typeof element === "object" &&
+      "id" in element &&
+      typeof element.id === "string"
+    ) {
       overrideMap.set(element.id, element as Record<string, unknown>);
     }
   }
@@ -170,6 +193,123 @@ const buildElementEdits = (
   }
 
   return edits.length > 0 ? edits : null;
+};
+
+const readBaselineGridOverride = (
+  overrides: Record<string, unknown> | null | undefined
+): BaselineGridGuide | null => {
+  if (!overrides || typeof overrides !== "object") return null;
+  const guides =
+    "guides" in overrides && overrides.guides && typeof overrides.guides === "object"
+      ? (overrides.guides as Record<string, unknown>)
+      : null;
+  if (!guides) return null;
+  const baselineGrid =
+    "baselineGrid" in guides && guides.baselineGrid && typeof guides.baselineGrid === "object"
+      ? (guides.baselineGrid as Record<string, unknown>)
+      : null;
+  if (!baselineGrid) return null;
+
+  const spacingRaw = baselineGrid.spacingPx;
+  const offsetRaw = baselineGrid.offsetPx;
+  const angleRaw = baselineGrid.angleDeg;
+  const snapRaw = baselineGrid.snapToPeaks;
+  const markRaw = baselineGrid.markCorrect;
+
+  const result: BaselineGridGuide = {};
+  if (isFiniteNumber(spacingRaw) || spacingRaw === null)
+    result.spacingPx = spacingRaw as number | null;
+  if (isFiniteNumber(offsetRaw) || offsetRaw === null) result.offsetPx = offsetRaw as number | null;
+  if (isFiniteNumber(angleRaw) || angleRaw === null) result.angleDeg = angleRaw as number | null;
+  if (typeof snapRaw === "boolean") result.snapToPeaks = snapRaw;
+  if (typeof markRaw === "boolean") result.markCorrect = markRaw;
+
+  return Object.keys(result).length > 0 ? result : null;
+};
+
+const readAutoBaselineGrid = (
+  sidecar: Record<string, unknown> | null
+): BaselineGridGuide | null => {
+  if (!sidecar || typeof sidecar !== "object") return null;
+  const bookModel =
+    "bookModel" in sidecar && sidecar.bookModel && typeof sidecar.bookModel === "object"
+      ? (sidecar.bookModel as Record<string, unknown>)
+      : null;
+  const baselineModel =
+    bookModel &&
+    "baselineGrid" in bookModel &&
+    bookModel.baselineGrid &&
+    typeof bookModel.baselineGrid === "object"
+      ? (bookModel.baselineGrid as Record<string, unknown>)
+      : null;
+  const metrics =
+    "metrics" in sidecar && sidecar.metrics && typeof sidecar.metrics === "object"
+      ? (sidecar.metrics as Record<string, unknown>)
+      : null;
+  const baselineMetrics =
+    metrics && "baseline" in metrics && metrics.baseline && typeof metrics.baseline === "object"
+      ? (metrics.baseline as Record<string, unknown>)
+      : null;
+  const normalization =
+    "normalization" in sidecar && sidecar.normalization && typeof sidecar.normalization === "object"
+      ? (sidecar.normalization as Record<string, unknown>)
+      : null;
+
+  const spacing =
+    (baselineModel && isFiniteNumber(baselineModel.dominantSpacingPx)
+      ? baselineModel.dominantSpacingPx
+      : null) ??
+    (baselineMetrics && isFiniteNumber(baselineMetrics.medianSpacingPx)
+      ? baselineMetrics.medianSpacingPx
+      : null);
+  const angle =
+    normalization && isFiniteNumber(normalization.skewAngle) ? normalization.skewAngle : null;
+
+  const result: BaselineGridGuide = {};
+  if (spacing !== null) result.spacingPx = spacing;
+  if (angle !== null) result.angleDeg = angle;
+
+  return Object.keys(result).length > 0 ? result : null;
+};
+
+const mergeBaselineGridGuides = (
+  auto: BaselineGridGuide | null,
+  override: BaselineGridGuide | null
+): BaselineGridGuide | null => {
+  if (!auto && !override) return null;
+  return {
+    spacingPx: override?.spacingPx === undefined ? auto?.spacingPx : override.spacingPx,
+    offsetPx: override?.offsetPx === undefined ? auto?.offsetPx : override.offsetPx,
+    angleDeg: override?.angleDeg === undefined ? auto?.angleDeg : override.angleDeg,
+    snapToPeaks: override?.snapToPeaks === undefined ? auto?.snapToPeaks : override.snapToPeaks,
+    markCorrect: override?.markCorrect === undefined ? auto?.markCorrect : override.markCorrect,
+  };
+};
+
+const buildBaselineGridDelta = (
+  auto: BaselineGridGuide | null,
+  final: BaselineGridGuide | null
+): BaselineGridGuide | null => {
+  if (!auto || !final) return null;
+  const spacingDelta =
+    isFiniteNumber(auto.spacingPx) && isFiniteNumber(final.spacingPx)
+      ? Number((final.spacingPx - auto.spacingPx).toFixed(2))
+      : undefined;
+  const offsetDelta =
+    isFiniteNumber(auto.offsetPx) && isFiniteNumber(final.offsetPx)
+      ? Number((final.offsetPx - auto.offsetPx).toFixed(2))
+      : undefined;
+  const angleDelta =
+    isFiniteNumber(auto.angleDeg) && isFiniteNumber(final.angleDeg)
+      ? Number((final.angleDeg - auto.angleDeg).toFixed(2))
+      : undefined;
+
+  const result: BaselineGridGuide = {};
+  if (spacingDelta !== undefined) result.spacingPx = spacingDelta;
+  if (offsetDelta !== undefined) result.offsetPx = offsetDelta;
+  if (angleDelta !== undefined) result.angleDeg = angleDelta;
+
+  return Object.keys(result).length > 0 ? result : null;
 };
 
 const buildAdjustmentSummary = (params: {
@@ -225,9 +365,6 @@ const buildAdjustmentSummary = (params: {
 export function registerIpcHandlers(): void {
   const resolveOutputDir = (): string =>
     process.env.ASTERIA_OUTPUT_DIR ?? path.join(process.cwd(), "pipeline-results");
-  const resolveRunDir = async (outputDir: string, runId: string): Promise<string> => {
-    return getRunDir(outputDir, runId);
-  };
 
   ipcMain.handle(
     "asteria:start-run",
@@ -240,8 +377,10 @@ export function registerIpcHandlers(): void {
       const projectRoot = resolveProjectRoot(config.pages);
       const outputDir = resolveOutputDir();
       const runId = await startRun(config, projectRoot, outputDir);
+      const runDir = getRunDir(outputDir, runId);
       return {
         runId,
+        runDir,
         status: "running",
         pagesProcessed: 0,
         errors: [],
@@ -317,11 +456,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:fetch-page",
-    async (_event: IpcMainInvokeEvent, runId: string, pageId: string) => {
+    async (_event: IpcMainInvokeEvent, runId: string, runDir: string, pageId: string) => {
       validateRunId(runId);
+      validateRunDir(runDir, runId);
       validatePageId(pageId);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
       const runSidecarPath = getRunSidecarPath(runDir, pageId);
 
       try {
@@ -347,11 +485,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:fetch-sidecar",
-    async (_event: IpcMainInvokeEvent, runId: string, pageId: string) => {
+    async (_event: IpcMainInvokeEvent, runId: string, runDir: string, pageId: string) => {
       validateRunId(runId);
+      validateRunDir(runDir, runId);
       validatePageId(pageId);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
       const runSidecarPath = getRunSidecarPath(runDir, pageId);
       try {
         const raw = await fs.readFile(runSidecarPath, "utf-8");
@@ -367,14 +504,14 @@ export function registerIpcHandlers(): void {
     async (
       _event: IpcMainInvokeEvent,
       runId: string,
+      runDir: string,
       pageId: string,
       overrides: Record<string, unknown>
     ) => {
       validateRunId(runId);
+      validateRunDir(runDir, runId);
       validatePageId(pageId);
       validateOverrides(overrides);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
       const overridesDir = path.join(runDir, "overrides");
       await fs.mkdir(overridesDir, { recursive: true });
       const appliedAt = new Date().toISOString();
@@ -392,7 +529,7 @@ export function registerIpcHandlers(): void {
           (sidecar.decisions && typeof sidecar.decisions === "object"
             ? (sidecar.decisions as Record<string, unknown>)
             : {}) ?? {};
-        
+
         // Extract actual field paths from overrides (e.g., "normalization.cropBox", "normalization.rotationDeg")
         const overrideFieldPaths: string[] = [];
         const collectFieldPaths = (obj: Record<string, unknown>, prefix = ""): void => {
@@ -407,7 +544,7 @@ export function registerIpcHandlers(): void {
           }
         };
         collectFieldPaths(overrides);
-        
+
         await writeJsonAtomic(sidecarPath, {
           ...sidecar,
           overrides,
@@ -426,9 +563,7 @@ export function registerIpcHandlers(): void {
         const manifest = JSON.parse(raw) as { pages?: Array<Record<string, unknown>> };
         if (Array.isArray(manifest.pages)) {
           manifest.pages = manifest.pages.map((page) =>
-            page.pageId === pageId
-              ? { ...page, overrides, overrideAppliedAt: appliedAt }
-              : page
+            page.pageId === pageId ? { ...page, overrides, overrideAppliedAt: appliedAt } : page
           );
           await writeJsonAtomic(manifestPath, manifest);
         }
@@ -440,11 +575,15 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:export-run",
-    async (_event: IpcMainInvokeEvent, runId: string, formats: ExportFormat[]): Promise<string> => {
+    async (
+      _event: IpcMainInvokeEvent,
+      runId: string,
+      runDir: string,
+      formats: ExportFormat[]
+    ): Promise<string> => {
       validateRunId(runId);
+      validateRunDir(runDir, runId);
       validateExportFormats(formats);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
       const exportDir = path.join(runDir, "exports", timestamp);
       await fs.mkdir(exportDir, { recursive: true });
@@ -549,10 +688,13 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:get-run-config",
-    async (_event: IpcMainInvokeEvent, runId: string): Promise<RunConfigSnapshot | null> => {
+    async (
+      _event: IpcMainInvokeEvent,
+      runId: string,
+      runDir: string
+    ): Promise<RunConfigSnapshot | null> => {
       validateRunId(runId);
-      const outputDir = resolveOutputDir();
-      const runDir = getRunDir(outputDir, runId);
+      validateRunDir(runDir, runId);
       const reportPath = getRunReportPath(runDir);
 
       try {
@@ -567,10 +709,13 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:get-run-manifest",
-    async (_event: IpcMainInvokeEvent, runId: string): Promise<RunManifestSummary | null> => {
+    async (
+      _event: IpcMainInvokeEvent,
+      runId: string,
+      runDir: string
+    ): Promise<RunManifestSummary | null> => {
       validateRunId(runId);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
+      validateRunDir(runDir, runId);
       const manifestPath = getRunManifestPath(runDir);
       try {
         const raw = await fs.readFile(manifestPath, "utf-8");
@@ -593,10 +738,13 @@ export function registerIpcHandlers(): void {
     const indexPath = path.join(outputDir, "run-index.json");
     try {
       const raw = await fs.readFile(indexPath, "utf-8");
-      const parsed = JSON.parse(raw) as { runs?: Array<RunSummary & { reviewQueuePath?: string }> };
+      const parsed = JSON.parse(raw) as {
+        runs?: Array<Omit<RunSummary, "runDir"> & { reviewQueuePath?: string }>;
+      };
       if (Array.isArray(parsed.runs)) {
         return parsed.runs.map((run) => ({
           runId: run.runId,
+          runDir: getRunDir(outputDir, run.runId),
           projectId: run.projectId,
           generatedAt: run.generatedAt,
           reviewCount: run.reviewCount ?? 0,
@@ -618,10 +766,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     "asteria:fetch-review-queue",
-    async (_event: IpcMainInvokeEvent, runId: string): Promise<ReviewQueue> => {
+    async (_event: IpcMainInvokeEvent, runId: string, runDir: string): Promise<ReviewQueue> => {
       validateRunId(runId);
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
+      validateRunDir(runDir, runId);
       const reviewPath = getRunReviewQueuePath(runDir);
       try {
         const data = await fs.readFile(reviewPath, "utf-8");
@@ -638,15 +785,38 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
+    "asteria:record-template-training",
+    async (_event: IpcMainInvokeEvent, runId: string, signal: Record<string, unknown>) => {
+      validateRunId(runId);
+      validateTemplateTrainingSignal(signal as unknown as TemplateTrainingSignal);
+      const outputDir = resolveOutputDir();
+      const runDir = getRunDir(outputDir, runId);
+      const trainingDir = getTrainingDir(runDir);
+      const templateDir = path.join(trainingDir, "template");
+      await fs.mkdir(templateDir, { recursive: true });
+      const safeTemplateId = String(signal.templateId ?? "unknown").replace(/[\\/:*?"<>|]/g, "_");
+      const payload = {
+        runId,
+        ...signal,
+        appliedAt: signal.appliedAt as string,
+      };
+      const filename = `${safeTemplateId}-${Date.now()}-${randomUUID()}.json`;
+      await writeJsonAtomic(path.join(templateDir, filename), payload);
+    }
+  );
+
+  ipcMain.handle(
     "asteria:submit-review",
     async (
       _event: IpcMainInvokeEvent,
       runId: string,
+      runDir: string,
       decisions: ReviewDecision[]
     ): Promise<void> => {
       validateRunId(runId);
+      validateRunDir(runDir, runId);
       validateOverrides({ decisions });
-      const reviewDir = path.join(resolveOutputDir(), "reviews");
+      const reviewDir = path.join(runDir, "reviews");
       await fs.mkdir(reviewDir, { recursive: true });
       const reviewPath = path.join(reviewDir, `${runId}.json`);
       const submittedAt = new Date().toISOString();
@@ -656,8 +826,6 @@ export function registerIpcHandlers(): void {
         decisions,
       });
 
-      const outputDir = resolveOutputDir();
-      const runDir = await resolveRunDir(outputDir, runId);
       const trainingDir = getTrainingDir(runDir);
       const trainingPageDir = path.join(trainingDir, "page");
       const trainingTemplateDir = path.join(trainingDir, "template");
@@ -685,10 +853,14 @@ export function registerIpcHandlers(): void {
           sidecar = null;
         }
 
-        let overrideRecord: { overrides?: Record<string, unknown>; appliedAt?: string } | null = null;
+        let overrideRecord: { overrides?: Record<string, unknown>; appliedAt?: string } | null =
+          null;
         try {
           const raw = await fs.readFile(overridePath, "utf-8");
-          overrideRecord = JSON.parse(raw) as { overrides?: Record<string, unknown>; appliedAt?: string };
+          overrideRecord = JSON.parse(raw) as {
+            overrides?: Record<string, unknown>;
+            appliedAt?: string;
+          };
         } catch {
           overrideRecord = null;
         }
@@ -700,6 +872,28 @@ export function registerIpcHandlers(): void {
           null;
         const appliedAt = overrideRecord?.appliedAt ?? submittedAt;
         const adjustments = buildAdjustmentSummary({ sidecar, overrides, appliedAt });
+        const autoBaselineGrid = readAutoBaselineGrid(sidecar);
+        const overrideBaselineGrid = readBaselineGridOverride(overrides ?? undefined);
+        const finalBaselineGrid = mergeBaselineGridGuides(autoBaselineGrid, overrideBaselineGrid);
+        const deltaBaselineGrid = buildBaselineGridDelta(autoBaselineGrid, finalBaselineGrid);
+        const confirmed = Boolean(finalBaselineGrid?.markCorrect ?? false);
+        const provenance = {
+          source: "review",
+          runId,
+          pageId,
+          submittedAt,
+          appliedAt,
+          decision: decision.decision,
+        };
+        const autoPayload = autoBaselineGrid
+          ? { guides: { baselineGrid: autoBaselineGrid } }
+          : null;
+        const finalPayload = finalBaselineGrid
+          ? { guides: { baselineGrid: finalBaselineGrid } }
+          : null;
+        const deltaPayload = deltaBaselineGrid
+          ? { guides: { baselineGrid: deltaBaselineGrid } }
+          : null;
 
         if (sidecar && adjustments) {
           await writeJsonAtomic(sidecarPath, {
@@ -709,8 +903,9 @@ export function registerIpcHandlers(): void {
         }
 
         const safePageId = sanitizeTrainingId(pageId);
-        const runningHeadTemplates = Array.isArray(sidecar?.bookModel?.runningHeadTemplates)
-          ? (sidecar?.bookModel?.runningHeadTemplates as Array<Record<string, unknown>>)
+        const bookModel = (sidecar?.bookModel ?? null) as Record<string, unknown> | null;
+        const runningHeadTemplates = Array.isArray(bookModel?.runningHeadTemplates)
+          ? (bookModel.runningHeadTemplates as Array<Record<string, unknown>>)
           : [];
         for (const template of runningHeadTemplates) {
           if (!template || typeof template !== "object") continue;
@@ -747,7 +942,6 @@ export function registerIpcHandlers(): void {
           pageId,
           decision: decision.decision,
           notes: decision.notes,
-          confirmed: decision.decision !== "reject",
           timestamps: {
             submittedAt,
             appliedAt,
@@ -763,14 +957,21 @@ export function registerIpcHandlers(): void {
             normalization: autoNormalization,
             elements: autoElements,
             bookModel: autoBookModel,
+            ...(autoPayload ?? null),
           },
           final: {
             normalization: overrideNormalization ?? autoNormalization,
             elements: overrideElements ?? autoElements,
             bookModel: autoBookModel,
+            ...(finalPayload ?? null),
           },
-          delta: adjustments ?? undefined,
+          delta: {
+            adjustments: adjustments ?? undefined,
+            ...(deltaPayload ?? null),
+          },
           sidecarPath: `sidecars/${pageId}.json`,
+          confirmed,
+          provenance,
         };
         trainingSignals.push(trainingSignal);
         await writeJsonAtomic(path.join(trainingPageDir, `${safePageId}.json`), trainingSignal);
