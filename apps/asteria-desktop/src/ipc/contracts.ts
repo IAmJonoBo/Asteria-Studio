@@ -76,6 +76,22 @@ export interface BaselineGridModel {
   confidence?: number;
 }
 
+export interface PageTemplate {
+  id: string;
+  pageType: LayoutProfile;
+  pageIds: string[];
+  margins?: { top: number; right: number; bottom: number; left: number };
+  columns?: { count: number; valleyRatio?: number };
+  headBand?: { ratio: number };
+  footerBand?: { ratio: number };
+  baseline?: { spacingPx?: number; consistency?: number };
+  gutter?: { meanRatio?: number };
+  ornamentHashes?: string[];
+  textDensity?: number;
+  whitespaceRatio?: number;
+  confidence: number;
+}
+
 export interface BookModel {
   trimBoxPx?: BoxDistribution;
   contentBoxPx?: BoxDistribution;
@@ -83,6 +99,7 @@ export interface BookModel {
   folioModel?: FolioModel;
   ornamentLibrary?: OrnamentAnchor[];
   baselineGrid?: BaselineGridModel;
+  pageTemplates?: PageTemplate[];
 }
 
 export interface ReviewPreview {
@@ -175,6 +192,9 @@ export interface PageLayoutElement {
 
 export interface PageLayoutSidecar {
   pageId: string;
+  pageType?: LayoutProfile;
+  templateId?: string;
+  templateConfidence?: number;
   source: { path: string; checksum: string; pageIndex?: number };
   spread?: {
     sourcePageId: string;
