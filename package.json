@@ -17,6 +17,7 @@
     "typecheck": "pnpm -C apps/asteria-desktop typecheck",
     "build": "pnpm -C apps/asteria-desktop build",
     "build:app": "pnpm -C apps/asteria-desktop build",
+    "package": "pnpm -C apps/asteria-desktop package",
     "pipeline:run": "pnpm -C apps/asteria-desktop pipeline:run",
     "pipeline:export": "pnpm -C apps/asteria-desktop pipeline:export",
     "golden:generate": "pnpm -C apps/asteria-desktop golden:generate",
