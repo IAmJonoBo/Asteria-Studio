@@ -13,9 +13,11 @@ import type {
   RunManifestSummary,
   ProjectSummary,
   ImportCorpusRequest,
+  TemplateTrainingSignal,
 } from "../ipc/contracts.js";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import {
   validateExportFormats,
@@ -25,6 +27,7 @@ import {
   validatePipelineRunConfig,
   validateRunDir,
   validateRunId,
+  validateTemplateTrainingSignal,
 } from "../ipc/validation.js";
 import { analyzeCorpus } from "../ipc/corpusAnalysis.js";
 import { scanCorpus } from "../ipc/corpusScanner.js";
@@ -48,6 +51,25 @@ import { writeJsonAtomic } from "./file-utils.js";
 import { importCorpus, listProjects, normalizeCorpusPath } from "./projects.js";
 
 type ExportFormat = "png" | "tiff" | "pdf";
+
+const readTemplateSignals = async (templateDir: string): Promise<Array<Record<string, unknown>>> => {
+  const templateSignals: Array<Record<string, unknown>> = [];
+  try {
+    const templateFiles = await fs.readdir(templateDir);
+    for (const file of templateFiles) {
+      if (!file.endsWith(".json")) continue;
+      try {
+        const raw = await fs.readFile(path.join(templateDir, file), "utf-8");
+        templateSignals.push(JSON.parse(raw) as Record<string, unknown>);
+      } catch {
+        // ignore malformed template signal
+      }
+    }
+  } catch {
+    // ignore missing template training signals
+  }
+  return templateSignals;
+};
 
 const listFilesByExtension = (files: string[], extensions: string[]): string[] =>
   files.filter((file) => extensions.some((ext) => file.toLowerCase().endsWith(ext)));
@@ -759,6 +781,27 @@ export function registerIpcHandlers(): void {
   );
 
   ipcMain.handle(
+    "asteria:record-template-training",
+    async (_event: IpcMainInvokeEvent, runId: string, signal: Record<string, unknown>) => {
+      validateRunId(runId);
+      validateTemplateTrainingSignal(signal as unknown as TemplateTrainingSignal);
+      const outputDir = resolveOutputDir();
+      const runDir = await resolveRunDir(outputDir, runId);
+      const trainingDir = getTrainingDir(runDir);
+      const templateDir = path.join(trainingDir, "template");
+      await fs.mkdir(templateDir, { recursive: true });
+      const safeTemplateId = String(signal.templateId ?? "unknown").replace(/[\\/:*?"<>|]/g, "_");
+      const payload = {
+        runId,
+        ...signal,
+        appliedAt: signal.appliedAt as string,
+      };
+      const filename = `${safeTemplateId}-${Date.now()}-${randomUUID()}.json`;
+      await writeJsonAtomic(path.join(templateDir, filename), payload);
+    }
+  );
+
+  ipcMain.handle(
     "asteria:submit-review",
     async (
       _event: IpcMainInvokeEvent,
@@ -858,11 +901,16 @@ export function registerIpcHandlers(): void {
         await writeJsonAtomic(path.join(trainingDir, `${safePageId}.json`), trainingSignal);
       }
 
+      const templateDir = path.join(trainingDir, "template");
+      const templateSignals = await readTemplateSignals(templateDir);
+
       await writeJsonAtomic(path.join(trainingDir, "manifest.json"), {
         runId,
         submittedAt,
         count: trainingSignals.length,
         signals: trainingSignals,
+        templateCount: templateSignals.length,
+        templateSignals,
       });
     }
   );
