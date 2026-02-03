@@ -240,12 +240,48 @@ export function registerIpcHandlers(): void {
       const runDir = await resolveRunDir(outputDir, runId);
       const overridesDir = path.join(runDir, "overrides");
       await fs.mkdir(overridesDir, { recursive: true });
+      const appliedAt = new Date().toISOString();
       const overridePath = path.join(overridesDir, `${pageId}.json`);
       await writeJsonAtomic(overridePath, {
         pageId,
         overrides,
-        appliedAt: new Date().toISOString(),
+        appliedAt,
       });
+      const sidecarPath = getRunSidecarPath(runDir, pageId);
+      try {
+        const raw = await fs.readFile(sidecarPath, "utf-8");
+        const sidecar = JSON.parse(raw) as Record<string, unknown>;
+        const decisions =
+          (sidecar.decisions && typeof sidecar.decisions === "object"
+            ? (sidecar.decisions as Record<string, unknown>)
+            : {}) ?? {};
+        await writeJsonAtomic(sidecarPath, {
+          ...sidecar,
+          overrides,
+          decisions: {
+            ...decisions,
+            overrides: Object.keys(overrides),
+            overrideAppliedAt: appliedAt,
+          },
+        });
+      } catch {
+        // ignore missing sidecar
+      }
+      const manifestPath = getRunManifestPath(runDir);
+      try {
+        const raw = await fs.readFile(manifestPath, "utf-8");
+        const manifest = JSON.parse(raw) as { pages?: Array<Record<string, unknown>> };
+        if (Array.isArray(manifest.pages)) {
+          manifest.pages = manifest.pages.map((page) =>
+            page.pageId === pageId
+              ? { ...page, overrides, overrideAppliedAt: appliedAt }
+              : page
+          );
+          await writeJsonAtomic(manifestPath, manifest);
+        }
+      } catch {
+        // ignore missing manifest
+      }
     }
   );
 
