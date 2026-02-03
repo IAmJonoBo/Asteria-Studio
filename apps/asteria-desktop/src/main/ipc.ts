@@ -255,12 +255,28 @@ export function registerIpcHandlers(): void {
           (sidecar.decisions && typeof sidecar.decisions === "object"
             ? (sidecar.decisions as Record<string, unknown>)
             : {}) ?? {};
+        
+        // Extract actual field paths from overrides (e.g., "normalization.cropBox", "normalization.rotationDeg")
+        const overrideFieldPaths: string[] = [];
+        const collectFieldPaths = (obj: Record<string, unknown>, prefix = ""): void => {
+          for (const key of Object.keys(obj)) {
+            const fullPath = prefix ? `${prefix}.${key}` : key;
+            const value = obj[key];
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+              collectFieldPaths(value as Record<string, unknown>, fullPath);
+            } else {
+              overrideFieldPaths.push(fullPath);
+            }
+          }
+        };
+        collectFieldPaths(overrides);
+        
         await writeJsonAtomic(sidecarPath, {
           ...sidecar,
           overrides,
           decisions: {
             ...decisions,
-            overrides: Object.keys(overrides),
+            overrides: overrideFieldPaths,
             overrideAppliedAt: appliedAt,
           },
         });
