@@ -35,7 +35,7 @@ graph LR
 - ✅ Review queue with keyboard shortcuts
 - ✅ Command palette for global actions
 - ✅ Theme support (light/dark)
-- ✅ Comprehensive test suite (91 tests, 89% coverage)
+- ✅ Comprehensive test suite (190 tests, ~92% coverage)
 
 ### In Progress (🚧)
 
@@ -254,7 +254,7 @@ timeline
         Core Pipeline : Scan, Analyze, Normalize, Priors
         UI Shell : Navigation, Review Queue, Command Palette
         JSON Sidecars : Schema-compliant output
-        Testing : 91 tests, 89% coverage
+        Testing : 190 tests, ~92% coverage
     section Q2 2026
         Rust CV Core : Deskew, Dewarp, Layout Detection
         Packaging : Mac, Windows, Linux builds (config ready)

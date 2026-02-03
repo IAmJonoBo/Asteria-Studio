@@ -640,8 +640,8 @@ graph TD
 
 **Unit & Integration** (Vitest):
 
-- ✅ 91 tests across 16 files
-- ✅ 89% code coverage
+- ✅ 190 tests across 31 files
+- ✅ ~92% code coverage
 - ✅ Corpus scanner, analyzer, normalization, book priors
 - ✅ IPC contracts and validation
 - ✅ Pipeline runner with recovery
@@ -705,7 +705,7 @@ graph TD
 
 - ✅ TypeScript compilation
 - ✅ ESLint (code quality)
-- ✅ Unit test suite (91 tests)
+- ✅ Unit test suite (190 tests)
 - ✅ Coverage thresholds (80/80/75/80)
 
 **Planned**:

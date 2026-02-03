@@ -161,6 +161,21 @@ pipeline-results/               # Working directory (gitignored)
 - **Cancel**: sets status to `cancelling`, aborts in-flight work, then persists `cancelled` in
   report/manifest snapshots for auditing.
 
+```mermaid
+stateDiagram-v2
+    [*] --> queued
+    queued --> running
+    running --> paused
+    paused --> running
+    running --> cancelling
+    cancelling --> cancelled
+    running --> error
+    running --> success
+    cancelled --> [*]
+    error --> [*]
+    success --> [*]
+```
+
 ### Live Monitor & Progress Events
 
 Main process emits `asteria:run-progress` events (throttled to ~5–10Hz) to the renderer.
@@ -229,6 +244,8 @@ Each pipeline run generates a `manifest.json`:
 | **UI Framework**     | React                 | 19.2    | Component-based renderer                     |
 | **Build Tool**       | Vite                  | 7.3     | Fast dev server + bundling                   |
 | **Language**         | TypeScript            | 5.9     | Type safety across codebase                  |
+| **Runtime**          | Node.js (LTS)          | 24.13   | Main + tooling runtime                       |
+| **Package Manager**  | pnpm                  | 10.28   | Workspace installs + lockfile                |
 | **Image Processing** | Sharp                 | 0.34    | Resize, format conversion, metadata          |
 | **Testing (Unit)**   | Vitest                | 4.0     | Fast test runner + coverage                  |
 | **Testing (E2E)**    | Playwright            | 1.58    | Browser automation                           |
@@ -248,7 +265,7 @@ Each pipeline run generates a `manifest.json`:
 
 ### Packaging (Planned)
 
-- **Electron Builder**: Mac (.dmg), Windows (.exe), Linux (.AppImage)
+- **Electron Builder (26.7)**: Mac (.dmg), Windows (.exe), Linux (.AppImage)
 - **Auto-update**: Optional update channel
 - **Code Signing**: Platform-specific certificates
 
@@ -358,19 +375,19 @@ pub fn run_pipeline(batch_config: BatchConfig) -> Result<BatchResult>
 
 ```mermaid
 graph LR
-    A[Unit Tests] -->|Vitest| B[91 tests]
+    A[Unit Tests] -->|Vitest| B[190 tests]
     C[Integration Tests] -->|Vitest| B
     D[E2E Tests] -->|Playwright| E[Smoke tests]
     F[Accessibility] -->|Testing Library| B
-    B --> G[89% Coverage]
+    B --> G[~92% Coverage]
 ```
 
 **Test Coverage** (Current):
 
-- **Lines**: 89.17% (threshold: 80%) ✅
-- **Statements**: 88.61% (threshold: 80%) ✅
-- **Branches**: 75.00% (threshold: 75%) ✅
-- **Functions**: 82.74% (threshold: 80%) ✅
+- **Lines**: 93.81% (threshold: 80%) ✅
+- **Statements**: 91.90% (threshold: 80%) ✅
+- **Branches**: 77.33% (threshold: 75%) ✅
+- **Functions**: 91.82% (threshold: 80%) ✅
 
 **Test Categories**:
 

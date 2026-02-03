@@ -19,7 +19,7 @@ graph LR
 - ✅ **IPC bridge** with secure contextIsolation and typed contracts
 - ✅ **Pipeline runner** with normalization, spread detection, and book priors
 - ✅ **Review queue** with keyboard shortcuts (J/K navigation, A/F/R triage)
-- ✅ **Comprehensive test suite** (91 tests across 16 files, 89% coverage)
+- ✅ **Comprehensive test suite** (190 tests across 31 files, ~92% coverage)
 - ✅ **Command palette** (Ctrl/Cmd+K) for all actions
 - ✅ **Theme support** (light/dark with system preference detection)
 - ✅ **Performance optimizations** (virtualized review queue list)
@@ -31,11 +31,12 @@ graph LR
 
 ## Stack
 
-- **UI**: Electron 40.1 + React 19 + Vite 7 + TypeScript 5.9
+- **UI**: Electron 40.1 + React 19.2 + Vite 7.3 + TypeScript 5.9
 - **Testing**: Vitest 4 (unit/integration) + Playwright 1.58 (E2E) + Testing Library
 - **Image Processing**: Sharp 0.34 (TypeScript), OpenCV (planned Rust)
 - **Pipeline**: Node orchestrator with async queue and recovery
 - **Native**: Rust + N-API bindings (via `napi-rs`, projection + dHash utilities integrated)
+- **Runtime**: Node 24 LTS + pnpm 10.28 (see `.node-version`)
 
 ## Project Structure
 
@@ -68,6 +69,7 @@ asteria-studio/
 ### Development
 
 ```bash
+# Use Node 24 LTS (see .node-version) + pnpm 10.28
 # Install dependencies
 pnpm install
 
@@ -128,6 +130,21 @@ Results written to `apps/asteria-desktop/pipeline-results/` with:
 5. **Normalization** — Scale, crop, align to target DPI and dimensions
 6. **QA Outputs** — Generate previews, overlays, JSON sidecars for review
 
+```mermaid
+stateDiagram-v2
+    [*] --> queued
+    queued --> running
+    running --> paused
+    paused --> running
+    running --> cancelling
+    cancelling --> cancelled
+    running --> error
+    running --> success
+    cancelled --> [*]
+    error --> [*]
+    success --> [*]
+```
+
 ### Safety & Determinism
 
 - **Checksums** — SHA-256 for inputs, detect duplicates and changes
@@ -139,7 +156,7 @@ Results written to `apps/asteria-desktop/pipeline-results/` with:
 
 ## Testing
 
-- **Unit/Integration**: 91 tests, 89% coverage (Vitest + jsdom)
+- **Unit/Integration**: 190 tests, ~92% coverage (Vitest + jsdom)
 - **E2E**: Playwright smoke tests for critical workflows
 - **Coverage Thresholds**: 80% lines/statements, 75% branches, 80% functions
 - **Accessibility**: Testing Library queries with `getByRole`, keyboard event simulation
