@@ -80,18 +80,20 @@ const verifyUnpackedRoots = async (unpackedRoots) => {
     const platformKey = `${process.platform}-${process.arch}`;
     const platformSharp = path.join(imgDir, `sharp-${platformKey}`, "lib");
 
-    if (!sharpStats?.isDirectory()) {
+    const hasSharp = sharpStats?.isDirectory() ?? false;
+    if (hasSharp) {
+      info(`Sharp unpacked: ${sharpDir}`);
+    } else {
       missing += 1;
       note(`Missing sharp in ${root}`);
-    } else {
-      info(`Sharp unpacked: ${sharpDir}`);
     }
 
-    if (!imgStats?.isDirectory()) {
+    const hasImg = imgStats?.isDirectory() ?? false;
+    if (hasImg) {
+      info(`@img unpacked: ${imgDir}`);
+    } else {
       missing += 1;
       note(`Missing @img in ${root}`);
-    } else {
-      info(`@img unpacked: ${imgDir}`);
     }
 
     const expectedNode = path.join(platformSharp, `sharp-${platformKey}.node`);
@@ -205,6 +207,39 @@ const findAppUnpackedInMount = async (mountRoot) => {
   return [];
 };
 
+const getDmgPath = async (root) => {
+  const entries = await fs.readdir(root, { withFileTypes: true });
+  const dmgEntries = entries.filter(
+    (entry) =>
+      entry.isFile() && entry.name.toLowerCase().endsWith(".dmg") && !entry.name.startsWith(".temp")
+  );
+  const dmgFiles = dmgEntries.map((entry) => path.join(root, entry.name));
+  const fallbackDmgFiles =
+    dmgFiles.length === 0
+      ? entries
+          .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".dmg"))
+          .map((entry) => path.join(root, entry.name))
+      : dmgFiles;
+  return fallbackDmgFiles[0] ?? null;
+};
+
+const verifyDmg = async (dmgPath) => {
+  let verified = false;
+  await withMountedDmg(dmgPath, async (mountRoot) => {
+    let dmgRoots = await findAppUnpackedInMount(mountRoot);
+    if (dmgRoots.length === 0) {
+      dmgRoots = await findUnpackedRoots(mountRoot);
+    }
+    if (dmgRoots.length === 0) {
+      console.error("No app.asar.unpacked directory found in DMG.");
+      verified = false;
+      return;
+    }
+    verified = await verifyUnpackedRoots(dmgRoots);
+  });
+  return verified;
+};
+
 const withMountedDmg = async (dmgPath, fn) => {
   const existingMounts = findMountedVolumes(dmgPath);
   if (existingMounts.length > 0) {
@@ -270,46 +305,25 @@ const main = async () => {
     return;
   }
 
-  const entries = await fs.readdir(distRoot, { withFileTypes: true });
-  const dmgEntries = entries.filter(
-    (entry) =>
-      entry.isFile() && entry.name.toLowerCase().endsWith(".dmg") && !entry.name.startsWith(".temp")
-  );
-  const dmgFiles = dmgEntries.map((entry) => path.join(distRoot, entry.name));
-  const fallbackDmgFiles =
-    dmgFiles.length === 0
-      ? entries
-          .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".dmg"))
-          .map((entry) => path.join(distRoot, entry.name))
-      : dmgFiles;
-
-  if (fallbackDmgFiles.length === 0) {
+  const dmgPath = await getDmgPath(distRoot);
+  if (!dmgPath) {
     console.error("No app.asar.unpacked directory found.");
     process.exit(1);
   }
 
   if (process.platform !== "darwin") {
     note("DMG found, but unpack verification requires macOS. Skipping native module checks.");
-    process.exit(0);
+    return;
   }
 
-  const dmgPath = fallbackDmgFiles[0];
   note(`Mounting DMG for inspection: ${path.basename(dmgPath)}`);
-  await withMountedDmg(dmgPath, async (mountRoot) => {
-    let dmgRoots = await findAppUnpackedInMount(mountRoot);
-    if (dmgRoots.length === 0) {
-      dmgRoots = await findUnpackedRoots(mountRoot);
-    }
-    if (dmgRoots.length === 0) {
-      console.error("No app.asar.unpacked directory found in DMG.");
-      process.exit(1);
-    }
-    const ok = await verifyUnpackedRoots(dmgRoots);
-    if (!ok) process.exit(1);
-  });
+  const ok = await verifyDmg(dmgPath);
+  if (!ok) process.exit(1);
 };
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
-});
+}

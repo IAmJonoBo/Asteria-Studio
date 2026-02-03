@@ -69,7 +69,9 @@ const main = async () => {
   copyStep("ok", `${copied} package(s) copied`);
 };
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
-});
+}
