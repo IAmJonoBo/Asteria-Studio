@@ -32,9 +32,10 @@
     "golden:generate": "ts-node --transpile-only scripts/run-golden-generator.ts",
     "golden:bless": "ts-node --transpile-only scripts/bless-golden.ts",
     "golden:test": "node scripts/run-vitest.mjs run --config vitest.golden.config.ts",
-    "package": "pnpm run build && pnpm exec electron-builder install-app-deps && electron-builder",
+    "vendor:sharp": "node scripts/vendor-sharp.mjs",
+    "package": "pnpm run build && pnpm run vendor:sharp && pnpm exec electron-builder install-app-deps && electron-builder",
     "package:verify": "node scripts/verify-package.mjs",
-    "dist": "pnpm run build && pnpm exec electron-builder install-app-deps && electron-builder --publish=never"
+    "dist": "pnpm run build && pnpm run vendor:sharp && pnpm exec electron-builder install-app-deps && electron-builder --publish=never"
   },
   "dependencies": {
     "react": "^19.2.4",

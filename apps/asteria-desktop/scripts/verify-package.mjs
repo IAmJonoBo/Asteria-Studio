@@ -239,6 +239,8 @@ const main = async () => {
     const imgDir = path.join(root, "node_modules", "@img");
     const sharpStats = await statSafe(sharpDir);
     const imgStats = await statSafe(imgDir);
+    const platformKey = `${process.platform}-${process.arch}`;
+    const platformSharp = path.join(imgDir, `sharp-${platformKey}`, "lib");
 
     if (!sharpStats?.isDirectory()) {
       missing += 1;
@@ -254,10 +256,10 @@ const main = async () => {
       info(`@img unpacked: ${imgDir}`);
     }
 
-    const nodeBinaries = await walk(root, (target) => target.endsWith(".node"));
+    const nodeBinaries = await walk(platformSharp, (target) => target.endsWith(".node"));
     if (nodeBinaries.length === 0) {
       missing += 1;
-      note(`No native .node binaries found in ${root}`);
+      note(`No native .node binaries found in ${platformSharp}`);
     } else {
       info(`Native binaries: ${nodeBinaries.length}`);
     }
