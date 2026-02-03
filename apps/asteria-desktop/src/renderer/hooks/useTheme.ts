@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Theme } from "../theme/tokens";
+import type { Theme } from "../theme/tokens.js";
 
 /**
  * Theme hook with system preference detection and persistence

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import path from "node:path";
-import { getRunDir, getRunReviewQueuePath, getRunSidecarPath } from "./run-paths";
+import { getRunDir, getRunReviewQueuePath, getRunSidecarPath } from "./run-paths.js";
 
 const handlers = vi.hoisted(() => new Map<string, (...args: unknown[]) => unknown>());
 const readFile = vi.hoisted(() => vi.fn());
@@ -62,7 +62,7 @@ vi.mock("./pipeline-config", () => ({
 }));
 vi.mock("./projects", () => ({ listProjects, importCorpus }));
 
-import { registerIpcHandlers } from "./ipc";
+import { registerIpcHandlers } from "./ipc.js";
 
 describe("IPC handler registration", () => {
   beforeEach(() => {

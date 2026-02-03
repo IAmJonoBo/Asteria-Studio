@@ -14,7 +14,7 @@ vi.mock("node:fs/promises", () => ({
   mkdir,
 }));
 
-import { readRunIndex, updateRunIndex } from "./run-index";
+import { readRunIndex, updateRunIndex } from "./run-index.js";
 
 describe("run-index", () => {
   beforeEach(() => {

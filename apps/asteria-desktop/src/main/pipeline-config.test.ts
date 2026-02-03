@@ -8,7 +8,11 @@ vi.mock("node:fs/promises", () => ({
   readFile,
 }));
 
-import { loadPipelineConfig, loadProjectOverrides, resolvePipelineConfig } from "./pipeline-config";
+import {
+  loadPipelineConfig,
+  loadProjectOverrides,
+  resolvePipelineConfig,
+} from "./pipeline-config.js";
 
 describe("pipeline-config", () => {
   beforeEach(() => {

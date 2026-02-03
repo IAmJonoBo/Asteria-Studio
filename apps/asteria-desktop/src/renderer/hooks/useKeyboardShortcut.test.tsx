@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { JSX } from "react";
-import { useKeyboardShortcuts } from "./useKeyboardShortcut";
+import { useKeyboardShortcuts } from "./useKeyboardShortcut.js";
 
 function ShortcutHarness(): JSX.Element {
   const [log, setLog] = useState<string[]>([]);

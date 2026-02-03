@@ -7,8 +7,8 @@ import {
   computeTargetDimensionsPx,
   estimatePageBounds,
   mmToPx,
-} from "./corpusAnalysis";
-import type { PipelineRunConfig } from "./contracts";
+} from "./corpusAnalysis.js";
+import type { PipelineRunConfig } from "./contracts.js";
 
 const buildConfig = (): PipelineRunConfig => ({
   projectId: "proj-corpus",

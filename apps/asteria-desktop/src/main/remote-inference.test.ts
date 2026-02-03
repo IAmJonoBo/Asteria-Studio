@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { requestRemoteLayout } from "./remote-inference";
+import { requestRemoteLayout } from "./remote-inference.js";
 
 const createTempImage = async (): Promise<string> => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-"));

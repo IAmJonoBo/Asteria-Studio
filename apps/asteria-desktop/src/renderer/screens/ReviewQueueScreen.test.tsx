@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReviewQueueScreen } from "./ReviewQueueScreen";
+import { ReviewQueueScreen } from "./ReviewQueueScreen.js";
 
 const resetAsteria = (): void => {
   delete (globalThis as typeof globalThis & { asteria?: unknown }).asteria;

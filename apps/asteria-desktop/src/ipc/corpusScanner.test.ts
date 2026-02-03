@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { scanCorpus } from "./corpusScanner";
+import { scanCorpus } from "./corpusScanner.js";
 
 const writeDummy = async (dir: string, name: string): Promise<string> => {
   const filePath = path.join(dir, name);

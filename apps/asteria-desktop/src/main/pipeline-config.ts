@@ -5,7 +5,7 @@ import type {
   PipelineConfig,
   PipelineConfigOverrides,
   PipelineConfigSources,
-} from "../ipc/contracts";
+} from "../ipc/contracts.js";
 
 export type { PipelineConfig, PipelineConfigOverrides, PipelineConfigSources };
 

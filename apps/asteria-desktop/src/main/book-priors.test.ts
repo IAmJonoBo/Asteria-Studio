@@ -3,7 +3,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
-import { deriveFolioModel, deriveOrnamentLibrary, deriveRunningHeadTemplates } from "./book-priors";
+import {
+  deriveFolioModel,
+  deriveOrnamentLibrary,
+  deriveRunningHeadTemplates,
+} from "./book-priors.js";
 
 type TestImageSpec = {
   width: number;

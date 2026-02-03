@@ -13,7 +13,7 @@ import {
   getRunReviewQueuePath,
   getSidecarDir,
   getRunSidecarPath,
-} from "./run-paths.ts";
+} from "./run-paths.js";
 
 describe("run-paths", () => {
   it("builds run-scoped artifact paths", () => {

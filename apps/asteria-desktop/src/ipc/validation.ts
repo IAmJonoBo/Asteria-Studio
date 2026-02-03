@@ -1,4 +1,4 @@
-import type { PageLayoutSidecar, PipelineRunConfig } from "./contracts";
+import type { PageLayoutSidecar, PipelineRunConfig } from "./contracts.js";
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;

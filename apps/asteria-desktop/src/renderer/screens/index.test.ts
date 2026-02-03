@@ -6,7 +6,7 @@ import {
   ReviewQueueScreen,
   RunsScreen,
   SettingsScreen,
-} from "./index";
+} from "./index.js";
 
 describe("screens index", () => {
   it("exports screens", () => {

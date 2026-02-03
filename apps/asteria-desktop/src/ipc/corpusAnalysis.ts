@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { CorpusSummary, PageBoundsEstimate, PipelineRunConfig } from "./contracts.ts";
-import { validatePipelineRunConfig } from "./validation.ts";
+import type { CorpusSummary, PageBoundsEstimate, PipelineRunConfig } from "./contracts.js";
+import { validatePipelineRunConfig } from "./validation.js";
 
 const MM_PER_INCH = 25.4;
 const DEFAULT_BLEED_MM = 3;

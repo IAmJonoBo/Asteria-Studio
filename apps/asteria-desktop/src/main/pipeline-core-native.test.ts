@@ -15,7 +15,7 @@ describe("pipeline-core native loader", () => {
       throw new Error("missing native module");
     });
 
-    const { getPipelineCoreNative } = await import("./pipeline-core-native.ts");
+    const { getPipelineCoreNative } = await import("./pipeline-core-native.js");
     expect(getPipelineCoreNative()).toBeNull();
   });
 
@@ -36,7 +36,7 @@ describe("pipeline-core native loader", () => {
 
     createRequireMock.mockReturnValue(() => fake);
 
-    const { getPipelineCoreNative } = await import("./pipeline-core-native.ts");
+    const { getPipelineCoreNative } = await import("./pipeline-core-native.js");
     expect(getPipelineCoreNative()).toBe(fake);
   });
 });

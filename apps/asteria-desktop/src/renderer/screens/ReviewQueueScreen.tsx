@@ -1,7 +1,7 @@
 import type { JSX, KeyboardEvent, MouseEvent, WheelEvent, MutableRefObject } from "react";
 import { useState, useEffect, useRef } from "react";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcut";
-import type { ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcut.js";
+import type { ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts.js";
 
 type PreviewRef = {
   path: string;

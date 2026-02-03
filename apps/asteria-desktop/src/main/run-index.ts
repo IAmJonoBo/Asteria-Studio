@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { writeJsonAtomic } from "./file-utils.ts";
+import { writeJsonAtomic } from "./file-utils.js";
 
 export type RunIndexStatus =
   | "queued"

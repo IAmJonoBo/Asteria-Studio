@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { ProjectSummary } from "../../ipc/contracts";
+import type { ProjectSummary } from "../../ipc/contracts.js";
 
 interface ProjectsScreenProps {
   onImportCorpus: () => void;

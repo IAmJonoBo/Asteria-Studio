@@ -12,7 +12,7 @@ import type {
   RunConfigSnapshot,
   ProjectSummary,
   ImportCorpusRequest,
-} from "../ipc/contracts";
+} from "../ipc/contracts.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
@@ -23,11 +23,15 @@ import {
   validatePageId,
   validatePipelineRunConfig,
   validateRunId,
-} from "../ipc/validation";
-import { analyzeCorpus } from "../ipc/corpusAnalysis";
-import { scanCorpus } from "../ipc/corpusScanner";
-import { startRun, cancelRun, pauseRun, resumeRun } from "./run-manager";
-import { loadPipelineConfig, loadProjectOverrides, resolvePipelineConfig } from "./pipeline-config";
+} from "../ipc/validation.js";
+import { analyzeCorpus } from "../ipc/corpusAnalysis.js";
+import { scanCorpus } from "../ipc/corpusScanner.js";
+import { startRun, cancelRun, pauseRun, resumeRun } from "./run-manager.js";
+import {
+  loadPipelineConfig,
+  loadProjectOverrides,
+  resolvePipelineConfig,
+} from "./pipeline-config.js";
 import {
   getRunDir,
   getRunManifestPath,
@@ -36,9 +40,9 @@ import {
   getRunSidecarPath,
   getNormalizedDir,
   getSidecarDir,
-} from "./run-paths";
-import { writeJsonAtomic } from "./file-utils";
-import { importCorpus, listProjects } from "./projects";
+} from "./run-paths.js";
+import { writeJsonAtomic } from "./file-utils.js";
+import { importCorpus, listProjects } from "./projects.js";
 
 type ExportFormat = "png" | "tiff" | "pdf";
 

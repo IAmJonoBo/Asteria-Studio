@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import type { CorpusSummary, PipelineRunConfig, PipelineRunResult } from "../ipc/contracts";
-import { analyzeCorpus } from "../ipc/corpusAnalysis";
-import { scanCorpus } from "../ipc/corpusScanner";
+import type { CorpusSummary, PipelineRunConfig, PipelineRunResult } from "../ipc/contracts.js";
+import { analyzeCorpus } from "../ipc/corpusAnalysis.js";
+import { scanCorpus } from "../ipc/corpusScanner.js";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { RunProgressEvent } from "../ipc/contracts";
+import type { RunProgressEvent } from "../ipc/contracts.js";
 
 const send = vi.hoisted(() => vi.fn());
 const getAllWindows = vi.hoisted(() => vi.fn(() => [{ webContents: { send } }]));
@@ -8,7 +8,7 @@ vi.mock("electron", () => ({
   BrowserWindow: { getAllWindows },
 }));
 
-import { clearRunProgress, emitRunProgress } from "./run-progress";
+import { clearRunProgress, emitRunProgress } from "./run-progress.js";
 
 describe("run-progress", () => {
   beforeEach(() => {

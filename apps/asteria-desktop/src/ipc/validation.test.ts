@@ -6,8 +6,8 @@ import {
   validatePageLayoutSidecar,
   validatePipelineRunConfig,
   validateRunId,
-} from "./validation";
-import type { PageLayoutSidecar, PipelineRunConfig } from "./contracts";
+} from "./validation.js";
+import type { PageLayoutSidecar, PipelineRunConfig } from "./contracts.js";
 
 const buildValidConfig = (): PipelineRunConfig => ({
   projectId: "proj-1",

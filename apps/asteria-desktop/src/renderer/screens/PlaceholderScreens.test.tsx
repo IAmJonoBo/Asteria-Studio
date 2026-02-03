@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { RunProgressEvent } from "../../ipc/contracts";
-import { ExportsScreen, MonitorScreen, RunsScreen, SettingsScreen } from "./PlaceholderScreens";
+import type { RunProgressEvent } from "../../ipc/contracts.js";
+import { ExportsScreen, MonitorScreen, RunsScreen, SettingsScreen } from "./PlaceholderScreens.js";
 
 const resetAsteria = (): void => {
   delete (globalThis as typeof globalThis & { asteria?: unknown }).asteria;

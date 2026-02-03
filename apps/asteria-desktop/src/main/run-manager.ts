@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
-import type { PipelineRunConfig, RunProgressEvent } from "../ipc/contracts";
-import { runPipeline } from "./pipeline-runner";
-import { getRunDir, getRunManifestPath, getRunReportPath } from "./run-paths";
-import { writeJsonAtomic } from "./file-utils";
-import { updateRunIndex, type RunIndexStatus } from "./run-index";
-import { clearRunProgress, emitRunProgress } from "./run-progress";
+import type { PipelineRunConfig, RunProgressEvent } from "../ipc/contracts.js";
+import { runPipeline } from "./pipeline-runner.js";
+import { getRunDir, getRunManifestPath, getRunReportPath } from "./run-paths.js";
+import { writeJsonAtomic } from "./file-utils.js";
+import { updateRunIndex, type RunIndexStatus } from "./run-index.js";
+import { clearRunProgress, emitRunProgress } from "./run-progress.js";
 
 type PauseController = {
   pause: () => void;

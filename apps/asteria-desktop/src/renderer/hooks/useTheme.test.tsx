@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useTheme } from "./useTheme";
+import { useTheme } from "./useTheme.js";
 
 function ThemeProbe(): JSX.Element {
   const [theme, setTheme] = useTheme();

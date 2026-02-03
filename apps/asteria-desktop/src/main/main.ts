@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "path";
-import { registerIpcHandlers } from "./ipc";
+import { registerIpcHandlers } from "./ipc.js";
 
 const isDev = process.env.NODE_ENV !== "production";
 

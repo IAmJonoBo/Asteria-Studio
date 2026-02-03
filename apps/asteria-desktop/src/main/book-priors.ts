@@ -5,8 +5,8 @@ import type {
   FolioModel,
   OrnamentAnchor,
   RunningHeadTemplate,
-} from "../ipc/contracts.ts";
-import { getPipelineCoreNative } from "./pipeline-core-native.ts";
+} from "../ipc/contracts.js";
+import { getPipelineCoreNative } from "./pipeline-core-native.js";
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 

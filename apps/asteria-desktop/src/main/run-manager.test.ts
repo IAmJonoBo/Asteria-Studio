@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { PipelineRunConfig } from "../ipc/contracts";
+import type { PipelineRunConfig } from "../ipc/contracts.js";
 
 const mkdir = vi.hoisted(() => vi.fn());
 const readFile = vi.hoisted(() => vi.fn());
@@ -24,7 +24,7 @@ const emitRunProgress = vi.hoisted(() => vi.fn());
 const clearRunProgress = vi.hoisted(() => vi.fn());
 vi.mock("./run-progress", () => ({ emitRunProgress, clearRunProgress }));
 
-import { cancelRun, isRunPaused, pauseRun, resumeRun, startRun } from "./run-manager";
+import { cancelRun, isRunPaused, pauseRun, resumeRun, startRun } from "./run-manager.js";
 
 describe("run-manager", () => {
   beforeEach(() => {

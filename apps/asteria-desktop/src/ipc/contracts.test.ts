@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { IpcChannels, PipelineRunConfig } from "./contracts";
+import type { IpcChannels, PipelineRunConfig } from "./contracts.js";
 
 describe("IPC Contracts", () => {
   describe("PipelineRunConfig", () => {

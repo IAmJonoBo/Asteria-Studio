@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokens } from "./tokens";
+import { tokens } from "./tokens.js";
 
 describe("tokens", () => {
   it("exposes core design tokens", () => {

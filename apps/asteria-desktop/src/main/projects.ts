@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { ImportCorpusRequest, ProjectSummary } from "../ipc/contracts";
-import { readRunIndex, type RunIndexStatus } from "./run-index";
+import type { ImportCorpusRequest, ProjectSummary } from "../ipc/contracts.js";
+import { readRunIndex, type RunIndexStatus } from "./run-index.js";
 
 const projectsRoot = path.join(process.cwd(), "projects");
 

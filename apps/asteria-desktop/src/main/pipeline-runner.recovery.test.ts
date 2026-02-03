@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { PipelineRunConfig, PageData } from "../ipc/contracts";
-import type { NormalizationResult } from "./normalization";
+import type { PipelineRunConfig, PageData } from "../ipc/contracts.js";
+import type { NormalizationResult } from "./normalization.js";
 
 const scanCorpus = vi.hoisted(() => vi.fn());
 const analyzeCorpus = vi.hoisted(() => vi.fn());
@@ -33,8 +33,8 @@ vi.mock("./normalization.ts", (): { normalizePage: typeof normalizePage } => ({ 
 vi.mock("./normalization", (): { normalizePage: typeof normalizePage } => ({ normalizePage }));
 vi.mock("./normalization.js", (): { normalizePage: typeof normalizePage } => ({ normalizePage }));
 
-const loadRunPipeline = async (): Promise<typeof import("./pipeline-runner").runPipeline> => {
-  const mod = await import("./pipeline-runner");
+const loadRunPipeline = async (): Promise<typeof import("./pipeline-runner.js").runPipeline> => {
+  const mod = await import("./pipeline-runner.js");
   return mod.runPipeline;
 };
 

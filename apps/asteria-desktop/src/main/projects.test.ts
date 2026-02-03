@@ -24,7 +24,7 @@ vi.mock("node:fs/promises", () => ({
 const readRunIndex = vi.hoisted(() => vi.fn());
 vi.mock("./run-index", () => ({ readRunIndex }));
 
-import { importCorpus, listProjects } from "./projects";
+import { importCorpus, listProjects } from "./projects.js";
 
 describe("projects", () => {
   beforeEach(() => {

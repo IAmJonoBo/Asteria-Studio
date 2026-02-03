@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
-import type { PageData } from "../ipc/contracts";
-import type { NormalizationResult } from "./normalization";
+import type { PageData } from "../ipc/contracts.js";
+import type { NormalizationResult } from "./normalization.js";
 
 const mockNative = {
   processPageStub: vi.fn(() => "ok"),
@@ -87,7 +87,7 @@ vi.mock(
   })
 );
 
-import { runPipeline } from "./pipeline-runner";
+import { runPipeline } from "./pipeline-runner.js";
 
 describe("Pipeline Runner native coverage", () => {
   let tempDir: string;

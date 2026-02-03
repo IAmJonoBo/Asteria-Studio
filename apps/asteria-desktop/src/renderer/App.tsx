@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import type { JSX } from "react";
-import { Navigation, type NavItem } from "./components/Navigation";
-import { CommandPalette } from "./components/CommandPalette";
-import { ProjectsScreen } from "./screens/ProjectsScreen";
-import { ReviewQueueScreen } from "./screens/ReviewQueueScreen";
-import { RunsScreen, MonitorScreen, ExportsScreen, SettingsScreen } from "./screens";
-import { useTheme } from "./hooks/useTheme";
-import { useKeyboardShortcut, useKeyboardShortcuts } from "./hooks/useKeyboardShortcut";
-import type { ProjectSummary, PipelineRunConfig } from "../ipc/contracts";
+import { Navigation, type NavItem } from "./components/Navigation.js";
+import { CommandPalette } from "./components/CommandPalette.js";
+import { ProjectsScreen } from "./screens/ProjectsScreen.js";
+import { ReviewQueueScreen } from "./screens/ReviewQueueScreen.js";
+import { RunsScreen, MonitorScreen, ExportsScreen, SettingsScreen } from "./screens/index.js";
+import { useTheme } from "./hooks/useTheme.js";
+import { useKeyboardShortcut, useKeyboardShortcuts } from "./hooks/useKeyboardShortcut.js";
+import type { ProjectSummary, PipelineRunConfig } from "../ipc/contracts.js";
 
 export function App(): JSX.Element {
   const [theme, setTheme] = useTheme();

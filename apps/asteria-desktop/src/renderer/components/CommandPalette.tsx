@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useState, useEffect, useRef } from "react";
-import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut";
+import { useKeyboardShortcut } from "../hooks/useKeyboardShortcut.js";
 
 interface CommandItem {
   id: string;

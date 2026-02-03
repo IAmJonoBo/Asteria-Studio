@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { IpcRendererEvent } from "electron";
-import type { IpcChannels, RunProgressEvent } from "../ipc/contracts";
+import type { IpcChannels, RunProgressEvent } from "../ipc/contracts.js";
 import {
   validateExportFormats,
   validateImportCorpusRequest,
@@ -8,7 +8,7 @@ import {
   validatePageId,
   validatePipelineRunConfig,
   validateRunId,
-} from "../ipc/validation";
+} from "../ipc/validation.js";
 
 /**
  * Secure preload: expose typed IPC API to renderer via context bridge.

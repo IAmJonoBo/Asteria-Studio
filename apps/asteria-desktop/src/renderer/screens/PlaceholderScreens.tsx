@@ -6,7 +6,7 @@ import type {
   PipelineConfigSnapshot,
   PipelineConfigOverrides,
   RunProgressEvent,
-} from "../../ipc/contracts";
+} from "../../ipc/contracts.js";
 
 interface RunsScreenProps {
   selectedRunId?: string;

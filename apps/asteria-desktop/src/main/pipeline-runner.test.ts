@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { PipelineConfig } from "./pipeline-config.ts";
-import type { PipelineRunnerResult } from "./pipeline-runner.ts";
-import type { NormalizationResult } from "./normalization";
-import type { PageData } from "../ipc/contracts.ts";
-import { runPipeline, evaluateResults } from "./pipeline-runner.ts";
-import { getRunDir, getRunManifestPath } from "./run-paths.ts";
+import type { PipelineConfig } from "./pipeline-config.js";
+import type { PipelineRunnerResult } from "./pipeline-runner.js";
+import type { NormalizationResult } from "./normalization.js";
+import type { PageData } from "../ipc/contracts.js";
+import { runPipeline, evaluateResults } from "./pipeline-runner.js";
+import { getRunDir, getRunManifestPath } from "./run-paths.js";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

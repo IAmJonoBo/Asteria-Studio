@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
-import type { CorpusSummary, PageBoundsEstimate, PageData } from "../ipc/contracts";
-import { normalizePage, normalizePages } from "./normalization";
+import type { CorpusSummary, PageBoundsEstimate, PageData } from "../ipc/contracts.js";
+import { normalizePage, normalizePages } from "./normalization.js";
 
 type MockMode = "center" | "shadow-left" | "low-coverage" | "noisy" | "high-coverage" | "shaded";
 

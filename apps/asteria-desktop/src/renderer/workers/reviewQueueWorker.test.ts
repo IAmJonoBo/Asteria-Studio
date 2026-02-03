@@ -11,7 +11,7 @@ describe("reviewQueueWorker", () => {
     ).postMessage = postMessage;
 
     vi.resetModules();
-    await import("./reviewQueueWorker");
+    await import("./reviewQueueWorker.js");
 
     const handler = (
       globalThis as typeof globalThis & {

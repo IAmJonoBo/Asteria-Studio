@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import type { RunProgressEvent } from "../ipc/contracts";
+import type { RunProgressEvent } from "../ipc/contracts.js";
 
 const lastEmitByRun = new Map<string, number>();
 const MIN_INTERVAL_MS = 120;

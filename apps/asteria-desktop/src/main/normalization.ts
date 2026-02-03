@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import type { BookModel, CorpusSummary, PageBoundsEstimate, PageData } from "../ipc/contracts.ts";
-import { getPipelineCoreNative, type PipelineCoreNative } from "./pipeline-core-native.ts";
-import { getNormalizedDir, getPreviewDir } from "./run-paths.ts";
+import type { BookModel, CorpusSummary, PageBoundsEstimate, PageData } from "../ipc/contracts.js";
+import { getPipelineCoreNative, type PipelineCoreNative } from "./pipeline-core-native.js";
+import { getNormalizedDir, getPreviewDir } from "./run-paths.js";
 
 const MAX_PREVIEW_DIM = 1600;
 const DEFAULT_PADDING_PX = 12;

@@ -21,11 +21,11 @@ import type {
   ReviewQueue,
   PageLayoutElement,
   RunProgressEvent,
-} from "../ipc/contracts.ts";
-import { scanCorpus } from "../ipc/corpusScanner.ts";
-import { analyzeCorpus, computeTargetDimensionsPx } from "../ipc/corpusAnalysis.ts";
-import { deriveBookModelFromImages } from "./book-priors.ts";
-import { getPipelineCoreNative, type PipelineCoreNative } from "./pipeline-core-native.ts";
+} from "../ipc/contracts.js";
+import { scanCorpus } from "../ipc/corpusScanner.js";
+import { analyzeCorpus, computeTargetDimensionsPx } from "../ipc/corpusAnalysis.js";
+import { deriveBookModelFromImages } from "./book-priors.js";
+import { getPipelineCoreNative, type PipelineCoreNative } from "./pipeline-core-native.js";
 import {
   getRunDir,
   getNormalizedDir,
@@ -37,22 +37,22 @@ import {
   getRunReviewQueuePath,
   getSidecarDir,
   getRunSidecarPath,
-} from "./run-paths.ts";
+} from "./run-paths.js";
 import {
   normalizePage,
   type NormalizationResult,
   type NormalizationOptions,
   type NormalizationPriors,
-} from "./normalization.ts";
-import { requestRemoteLayout } from "./remote-inference.ts";
+} from "./normalization.js";
+import { requestRemoteLayout } from "./remote-inference.js";
 import {
   loadPipelineConfig,
   loadProjectOverrides,
   resolvePipelineConfig,
   type PipelineConfig,
-} from "./pipeline-config.ts";
-import { updateRunIndex, type RunIndexStatus } from "./run-index.ts";
-import { writeJsonAtomic } from "./file-utils.ts";
+} from "./pipeline-config.js";
+import { updateRunIndex, type RunIndexStatus } from "./run-index.js";
+import { writeJsonAtomic } from "./file-utils.js";
 
 const sleep = async (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));

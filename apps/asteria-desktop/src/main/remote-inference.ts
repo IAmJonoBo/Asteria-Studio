@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { PageLayoutElement } from "../ipc/contracts";
+import type { PageLayoutElement } from "../ipc/contracts.js";
 
 const ALLOWED_TYPES = new Set<PageLayoutElement["type"]>([
   "page_bounds",
