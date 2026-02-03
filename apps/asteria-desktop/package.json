@@ -78,6 +78,11 @@
       "output": "dist-app"
     },
     "icon": "build/icon.png",
+    "asarUnpack": [
+      "**/*.node",
+      "node_modules/sharp/**",
+      "node_modules/@img/**"
+    ],
     "files": [
       "dist/**",
       "package.json"

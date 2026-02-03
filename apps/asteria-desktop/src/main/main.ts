@@ -1,13 +1,34 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, dialog } from "electron";
 import { fileURLToPath } from "url";
 import path from "path";
 import { loadEnv } from "./config.js";
-import { registerIpcHandlers } from "./ipc.js";
 
 loadEnv();
 
 const isDev = process.env.NODE_ENV !== "production";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const ensureSharp = async (): Promise<boolean> => {
+  try {
+    await import("sharp");
+    return true;
+  } catch (error) {
+    const message = [
+      "Sharp failed to load. Native image processing will be unavailable.",
+      "",
+      "Possible fixes:",
+      "- Ensure optional dependencies are installed (pnpm install --include=optional).",
+      "- For packaged builds, ensure native modules are unpacked from ASAR.",
+      "- Rebuild sharp for the current Electron runtime if needed.",
+    ].join("\n");
+    console.error(message);
+    console.error(error instanceof Error ? error.message : String(error));
+    if (app.isReady()) {
+      dialog.showErrorBox("Asteria Studio - Sharp Load Error", message);
+    }
+    return false;
+  }
+};
 
 async function createWindow(): Promise<void> {
   const win = new BrowserWindow({
@@ -32,6 +53,13 @@ async function createWindow(): Promise<void> {
 app
   .whenReady()
   .then(async () => {
+    const sharpOk = await ensureSharp();
+    if (!sharpOk) {
+      app.exit(1);
+      return;
+    }
+
+    const { registerIpcHandlers } = await import("./ipc.js");
     registerIpcHandlers();
     await createWindow();
 

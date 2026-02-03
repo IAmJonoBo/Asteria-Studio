@@ -10,6 +10,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { getRunDir } from "../src/main/run-paths.ts";
 import { loadEnv } from "../src/main/config.ts";
+import { info, note, section, startStep } from "./cli.ts";
 
 loadEnv();
 
@@ -19,23 +20,22 @@ async function main(): Promise<void> {
   const sampleCount = process.argv[3] ? Number.parseInt(process.argv[3], 10) : undefined;
   const outputDir = path.join(process.cwd(), "pipeline-results");
 
-  console.log("=".repeat(80));
-  console.log("ASTERIA PIPELINE EXECUTION");
-  console.log("=".repeat(80));
-  console.log(`Project Root: ${projectRoot}`);
-  console.log(`Sample Count: ${sampleCount || "all pages"}`);
-  console.log(`Output Dir: ${outputDir}`);
-  console.log("");
+  section("ASTERIA PIPELINE EXECUTION");
+  info(`Project Root: ${projectRoot}`);
+  info(`Sample Count: ${sampleCount || "all pages"}`);
+  info(`Output Dir: ${outputDir}`);
 
   try {
     // Verify project exists
+    const verifyStep = startStep("Verify project root");
     const stat = await fs.stat(projectRoot);
     if (!stat.isDirectory()) {
       throw new Error(`Project root is not a directory: ${projectRoot}`);
     }
+    verifyStep.end("ok");
 
     // Run pipeline
-    console.log("Starting pipeline execution...");
+    const runStep = startStep("Run pipeline");
     const startTime = Date.now();
     const result = await runPipeline({
       projectRoot,
@@ -46,72 +46,54 @@ async function main(): Promise<void> {
       outputDir,
     });
     const totalTime = Date.now() - startTime;
+    runStep.end(result.success ? "ok" : "fail");
 
-    console.log("");
-    console.log("=".repeat(80));
-    console.log("PIPELINE RESULTS");
-    console.log("=".repeat(80));
-    console.log(`Status: ${result.success ? "✓ SUCCESS" : "✗ FAILED"}`);
-    console.log(`Run ID: ${result.runId}`);
-    console.log(`Pages Processed: ${result.pageCount}`);
-    console.log(`Duration: ${(totalTime / 1000).toFixed(2)}s`);
-    console.log(`Throughput: ${((result.pageCount / totalTime) * 1000).toFixed(2)} pages/sec`);
-    console.log("");
+    section("PIPELINE RESULTS");
+    info(`Status: ${result.success ? "SUCCESS" : "FAILED"}`);
+    info(`Run ID: ${result.runId}`);
+    info(`Pages Processed: ${result.pageCount}`);
+    info(`Duration: ${(totalTime / 1000).toFixed(2)}s`);
+    info(`Throughput: ${((result.pageCount / totalTime) * 1000).toFixed(2)} pages/sec`);
 
     if (!result.success) {
-      console.log("ERRORS:");
+      note("Errors:");
       result.errors.forEach((e) => {
-        console.log(`  [${e.phase}] ${e.message}`);
+        info(`[${e.phase}] ${e.message}`);
       });
-      console.log("");
       process.exit(1);
     }
 
     // Evaluate results
-    console.log("=".repeat(80));
-    console.log("EVALUATION");
-    console.log("=".repeat(80));
+    section("EVALUATION");
+    const evalStep = startStep("Compute evaluation");
     const evaluation = evaluateResults(result);
+    evalStep.end("ok");
 
-    console.log("\nOBSERVATIONS:");
+    note("Observations:");
     evaluation.observations.forEach((obs) => {
-      console.log(`  • ${obs}`);
+      info(`- ${obs}`);
     });
 
-    console.log("\nMETRICS:");
+    note("Metrics:");
     Object.entries(evaluation.metrics).forEach(([key, value]) => {
       let displayValue: string | number = value as string | number;
       if (typeof value === "number") {
         displayValue = Number.isInteger(value) ? value : value.toFixed(2);
       }
-      console.log(`  ${key}: ${displayValue}`);
+      info(`${key}: ${displayValue}`);
     });
 
-    console.log("\nRECOMMENDATIONS:");
+    note("Recommendations:");
     evaluation.recommendations.forEach((rec) => {
-      console.log(`  → ${rec}`);
+      info(`- ${rec}`);
     });
-
-    console.log("");
-    console.log("=".repeat(80));
 
     // Save full evaluation report
     const runDir = getRunDir(outputDir, result.runId);
     const reportPath = path.join(runDir, "evaluation.json");
-    await fs.writeFile(
-      reportPath,
-      JSON.stringify(
-        {
-          executedAt: new Date().toISOString(),
-          result,
-          evaluation,
-        },
-        null,
-        2
-      )
-    );
-    console.log(`Full evaluation report saved to: ${reportPath}`);
-    console.log("");
+    const writeStep = startStep("Write evaluation report");
+    await fs.writeFile(reportPath, JSON.stringify({ executedAt: new Date().toISOString(), result, evaluation }, null, 2));
+    writeStep.end("ok", reportPath);
   } catch (error) {
     console.error("Pipeline execution failed:");
     console.error(error instanceof Error ? error.message : String(error));

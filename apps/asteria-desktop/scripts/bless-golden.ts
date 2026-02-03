@@ -8,6 +8,7 @@ import {
   getRunManifestPath,
   getRunReviewQueuePath,
 } from "../src/main/run-paths.ts";
+import { info, note, section, startStep } from "./cli.ts";
 
 const repoRoot = path.resolve(process.cwd(), "..", "..");
 const fixturesRoot = path.join(repoRoot, "tests", "fixtures", "golden_corpus", "v1");
@@ -51,13 +52,18 @@ const resolvePython = (): string => {
 };
 
 const runGenerator = () => {
+  const resolveStep = startStep("Resolve Python");
   const python = resolvePython();
+  resolveStep.end("ok", python);
+  const runStep = startStep("Run generator");
   const result = spawnSync(python, [generatorPath, "--seed", "1337", "--out", fixturesRoot], {
     stdio: "inherit",
   });
   if (result.status !== 0) {
+    runStep.end("fail");
     throw new Error("Golden generator failed");
   }
+  runStep.end("ok");
 };
 
 const copyDir = async (src: string, dest: string) => {
@@ -67,6 +73,10 @@ const copyDir = async (src: string, dest: string) => {
 };
 
 const main = async () => {
+  section("GOLDEN BLESS");
+  info(`Fixtures: ${fixturesRoot}`);
+
+  const generatorStep = startStep("Generate fixtures (twice)");
   runGenerator();
   const inputsHash = await hashDirectory(inputsDir);
   const truthHash = await hashDirectory(truthDir);
@@ -74,8 +84,10 @@ const main = async () => {
   const inputsHash2 = await hashDirectory(inputsDir);
   const truthHash2 = await hashDirectory(truthDir);
   if (inputsHash !== inputsHash2 || truthHash !== truthHash2) {
+    generatorStep.end("fail", "non-deterministic output");
     throw new Error("Golden generator is not deterministic across runs");
   }
+  generatorStep.end("ok", "deterministic");
 
   delete process.env.ASTERIA_REMOTE_LAYOUT_ENDPOINT;
   delete process.env.ASTERIA_REMOTE_LAYOUT_TOKEN;
@@ -85,6 +97,7 @@ const main = async () => {
   const runRoot = path.join(process.cwd(), ".cache", "golden", "bless");
   await fs.mkdir(runRoot, { recursive: true });
 
+  const pipelineStep = startStep("Run pipeline");
   const result = await runPipeline({
     projectRoot: inputsDir,
     projectId: runId,
@@ -99,17 +112,22 @@ const main = async () => {
   });
 
   if (!result.success) {
+    pipelineStep.end("fail");
     throw new Error("Pipeline failed during bless run");
   }
+  pipelineStep.end("ok");
 
   const runDir = getRunDir(runRoot, runId);
+  const copyStep = startStep("Copy expected outputs");
   await copyDir(path.join(runDir, "normalized"), path.join(expectedDir, "normalized"));
   await copyDir(path.join(runDir, "sidecars"), path.join(expectedDir, "sidecars"));
 
   await fs.copyFile(getRunReviewQueuePath(runDir), path.join(expectedDir, "review-queue.json"));
   await fs.copyFile(getRunManifestPath(runDir), path.join(expectedDir, "manifest.json"));
+  copyStep.end("ok");
 
-  console.log("Golden expected outputs updated.");
+  section("GOLDEN OUTPUTS UPDATED");
+  note(`Expected: ${expectedDir}`);
 };
 
 main().catch((error) => {

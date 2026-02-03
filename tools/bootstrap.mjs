@@ -16,6 +16,62 @@ const findRepoRoot = (startDir) => {
   return startDir;
 };
 
+const supportsColor = Boolean(process.stdout.isTTY);
+const colorize = (code) => (value) =>
+  supportsColor ? `\u001b[${code}m${value}\u001b[0m` : value;
+const dim = colorize("2");
+const green = colorize("32");
+const yellow = colorize("33");
+const red = colorize("31");
+const cyan = colorize("36");
+
+const formatDuration = (ms) => {
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds.toFixed(2)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds - minutes * 60;
+  return `${minutes}m ${remainder.toFixed(1)}s`;
+};
+
+const timestamp = () => {
+  const now = new Date();
+  const pad = (value) => value.toString().padStart(2, "0");
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+};
+
+const section = (title) => {
+  const width = Math.max(48, Math.min(80, title.length + 12));
+  const rule = "=".repeat(width);
+  console.log(`\n${rule}`);
+  console.log(cyan(title));
+  console.log(rule);
+};
+
+const info = (message) => {
+  console.log(`  ${message}`);
+};
+
+const note = (message) => {
+  console.log(dim(`  ${message}`));
+};
+
+const statusLabel = (status) => {
+  if (status === "ok") return green("ok");
+  if (status === "warn") return yellow("warn");
+  return red("fail");
+};
+
+const startStep = (label) => {
+  const startedAt = Date.now();
+  console.log(`${dim(timestamp())} [start] ${label}`);
+  return (status = "ok", detail) => {
+    const duration = formatDuration(Date.now() - startedAt);
+    const suffix = detail ? ` - ${detail}` : "";
+    console.log(`${dim(timestamp())} [${statusLabel(status)}] ${label}${suffix} ${dim(`(${duration})`)}`);
+  };
+};
+
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
     stdio: "inherit",
@@ -36,41 +92,37 @@ const runCapture = (command, args) => {
   return (result.stdout || "").trim();
 };
 
-const banner = (title) => {
-  console.log("\n" + "=".repeat(72));
-  console.log(title);
-  console.log("=".repeat(72));
-};
-
 const main = () => {
   const repoRoot = findRepoRoot(process.cwd());
 
-  banner("ASTERIA BOOTSTRAP");
-  console.log(`Repo: ${repoRoot}`);
+  section("ASTERIA BOOTSTRAP");
+  info(`Repo: ${repoRoot}`);
 
   const pnpmVersion = runCapture("pnpm", ["--version"]);
   if (!pnpmVersion) {
     console.error("pnpm not found. Install pnpm (or enable corepack) and retry.");
     process.exit(1);
   }
-  console.log(`pnpm: ${pnpmVersion}`);
+  info(`pnpm: ${pnpmVersion}`);
 
-  banner("Installing dependencies (pnpm install)");
+  section("Installing dependencies (pnpm install)");
+  const installStep = startStep("pnpm install");
   run("pnpm", ["install"], { cwd: repoRoot });
+  installStep("ok");
 
-  banner("Checking Rust toolchain (optional)");
+  section("Checking Rust toolchain (optional)");
   const rustcVersion = runCapture("rustc", ["--version"]);
   const cargoVersion = runCapture("cargo", ["--version"]);
 
   if (!rustcVersion && !cargoVersion) {
-    console.log("Rust toolchain not found. This is optional for now.");
-    console.log("If you plan to work on native CV stages, install via rustup.");
+    note("Rust toolchain not found. This is optional for now.");
+    note("If you plan to work on native CV stages, install via rustup.");
     return;
   }
 
-  if (rustcVersion) console.log(`rustc: ${rustcVersion}`);
-  if (cargoVersion) console.log(`cargo: ${cargoVersion}`);
-  console.log("Rust toolchain OK.");
+  if (rustcVersion) info(`rustc: ${rustcVersion}`);
+  if (cargoVersion) info(`cargo: ${cargoVersion}`);
+  note("Rust toolchain OK.");
 };
 
 try {
