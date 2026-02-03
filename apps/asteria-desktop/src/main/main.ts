@@ -1,8 +1,10 @@
 import { app, BrowserWindow } from "electron";
+import { fileURLToPath } from "url";
 import path from "path";
 import { registerIpcHandlers } from "./ipc.js";
 
 const isDev = process.env.NODE_ENV !== "production";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function createWindow(): Promise<void> {
   const win = new BrowserWindow({
@@ -24,16 +26,22 @@ async function createWindow(): Promise<void> {
   }
 }
 
-app.whenReady().then(() => {
-  registerIpcHandlers();
-  createWindow();
+app
+  .whenReady()
+  .then(async () => {
+    registerIpcHandlers();
+    await createWindow();
 
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        void createWindow();
+      }
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to start app:", err);
+    app.exit(1);
   });
-});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

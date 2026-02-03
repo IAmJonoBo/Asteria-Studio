@@ -8,12 +8,14 @@ mkdirSync(distDir, { recursive: true });
 const unixLauncher = `#!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export NODE_ENV="production"
 exec "$ROOT/node_modules/.bin/electron" "$ROOT" "$@"
 `;
 
-const winLauncher = `@echo off
-set ROOT=%~dp0..\
-"%ROOT%node_modules\\.bin\\electron.cmd" "%ROOT%" %*
+const winLauncher = `@echo off\r
+set ROOT=%~dp0..\\\r
+set NODE_ENV=production\r
+"%ROOT%node_modules\\.bin\\electron.cmd" "%ROOT%" %*\r
 `;
 
 const unixPath = path.join(distDir, "asteria-studio");

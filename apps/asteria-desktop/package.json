@@ -11,6 +11,7 @@
     "dev": "concurrently \"pnpm:dev:renderer\" \"pnpm:dev:main\"",
     "dev:renderer": "vite --config vite.config.ts",
     "dev:main": "ts-node --transpile-only src/main/main.ts",
+    "prebuild": "node scripts/ensure-electron.mjs",
     "build": "pnpm run build:renderer && pnpm run build:main && pnpm run build:launcher",
     "build:renderer": "vite build",
     "build:main": "tsc --project tsconfig.build.json",
