@@ -61,10 +61,10 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@types/node':
-        specifier: ^25.1.0
+        specifier: ^25.2.0
         version: 25.2.0
       '@types/pixelmatch':
-        specifier: ^5.2.4
+        specifier: ^5.2.6
         version: 5.2.6
       '@types/react':
         specifier: ^19.2.10
@@ -79,7 +79,7 @@ importers:
         specifier: ^8.54.0
         version: 8.54.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       '@vitejs/plugin-react':
-        specifier: ^5.1.2
+        specifier: ^5.1.3
         version: 5.1.3(vite@7.3.1(@types/node@25.2.0)(jiti@2.6.1)(yaml@2.8.2))
       '@vitest/coverage-v8':
         specifier: ^4.0.18
@@ -88,7 +88,7 @@ importers:
         specifier: ^9.2.1
         version: 9.2.1
       electron-builder:
-        specifier: ^26.0.12
+        specifier: ^26.7.0
         version: 26.7.0(electron-builder-squirrel-windows@26.7.0)
       eslint:
         specifier: ^9.39.2
@@ -103,7 +103,7 @@ importers:
         specifier: ^28.0.0
         version: 28.0.0
       pixelmatch:
-        specifier: ^7.0.0
+        specifier: ^7.1.0
         version: 7.1.0
       playwright:
         specifier: ^1.58.1
@@ -130,7 +130,7 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.2.0)(jiti@2.6.1)(jsdom@28.0.0)(yaml@2.8.2)
       zod:
-        specifier: ^4.0.0
+        specifier: ^4.3.6
         version: 4.3.6
 
   packages/ui-kit: {}
