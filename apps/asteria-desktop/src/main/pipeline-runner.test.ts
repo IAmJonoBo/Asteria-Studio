@@ -10,6 +10,29 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 
+const createSpreadImage = async (dir: string, name: string, options?: { gutter?: boolean }) => {
+  const width = 220;
+  const height = 120;
+  const buffer = Buffer.alloc(width * height * 3, 255);
+  if (options?.gutter) {
+    const bandStart = Math.floor(width / 2) - 5;
+    const bandEnd = bandStart + 10;
+    for (let y = 0; y < height; y++) {
+      for (let x = bandStart; x < bandEnd; x++) {
+        const idx = (y * width + x) * 3;
+        buffer[idx] = 40;
+        buffer[idx + 1] = 40;
+        buffer[idx + 2] = 40;
+      }
+    }
+  }
+  const spreadPath = path.join(dir, name);
+  await sharp(buffer, { raw: { width, height, channels: 3 } })
+    .png()
+    .toFile(spreadPath);
+  return spreadPath;
+};
+
 const buildMockNormalization = (page: PageData): NormalizationResult => {
   const id = page.id;
   const isBlank = id.includes("blank");
@@ -291,23 +314,7 @@ describe("Pipeline Runner", () => {
 
   it("splits two-page spreads when enabled", async () => {
     const spreadDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-spread-"));
-    const width = 220;
-    const height = 120;
-    const buffer = Buffer.alloc(width * height * 3, 255);
-    const bandStart = Math.floor(width / 2) - 5;
-    const bandEnd = bandStart + 10;
-    for (let y = 0; y < height; y++) {
-      for (let x = bandStart; x < bandEnd; x++) {
-        const idx = (y * width + x) * 3;
-        buffer[idx] = 40;
-        buffer[idx + 1] = 40;
-        buffer[idx + 2] = 40;
-      }
-    }
-    const spreadPath = path.join(spreadDir, "spread.png");
-    await sharp(buffer, { raw: { width, height, channels: 3 } })
-      .png()
-      .toFile(spreadPath);
+    await createSpreadImage(spreadDir, "spread.png", { gutter: true });
 
     const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-spread-out-"));
     const result = await runPipeline({
@@ -322,25 +329,86 @@ describe("Pipeline Runner", () => {
     expect(result.scanConfig.pages.length).toBe(2);
   });
 
+  it("does not split when spread detection fails", async () => {
+    const spreadDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-no-split-"));
+    await createSpreadImage(spreadDir, "single.png", { gutter: false });
+
+    const result = await runPipeline({
+      projectRoot: spreadDir,
+      projectId: "no-split-detect",
+      enableSpreadSplit: true,
+      spreadSplitConfidence: 0.6,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.scanConfig.pages.length).toBe(1);
+  });
+
   it("fails closed when spread confidence is low", async () => {
     const spreadDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-nospread-"));
-    const width = 220;
-    const height = 120;
-    const buffer = Buffer.alloc(width * height * 3, 255);
-    const spreadPath = path.join(spreadDir, "single.png");
-    await sharp(buffer, { raw: { width, height, channels: 3 } })
-      .png()
-      .toFile(spreadPath);
+    await createSpreadImage(spreadDir, "single.png", { gutter: true });
 
     const result = await runPipeline({
       projectRoot: spreadDir,
       projectId: "no-split",
       enableSpreadSplit: true,
-      spreadSplitConfidence: 0.7,
+      spreadSplitConfidence: 1.1,
     });
 
     expect(result.success).toBe(true);
     expect(result.scanConfig.pages.length).toBe(1);
+  });
+
+  it("writes spread metadata to manifest and review queue", async () => {
+    const spreadDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-spread-meta-"));
+    await createSpreadImage(spreadDir, "spread.png", { gutter: true });
+
+    const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-spread-meta-out-"));
+    const result = await runPipeline({
+      projectRoot: spreadDir,
+      projectId: "spread-meta",
+      enableSpreadSplit: true,
+      spreadSplitConfidence: 0.6,
+      outputDir,
+      pipelineConfigOverrides: {
+        steps: {
+          qa: {
+            mask_coverage_min: 0.95,
+          },
+        },
+      } as Partial<PipelineConfig>,
+    });
+
+    expect(result.success).toBe(true);
+    const runDir = getRunDir(outputDir, result.runId);
+    const manifestRaw = await fs.readFile(getRunManifestPath(runDir), "utf-8");
+    const manifest = JSON.parse(manifestRaw) as {
+      pages?: Array<{
+        pageId: string;
+        spread?: { sourcePageId?: string; side?: string };
+      }>;
+    };
+    const manifestSpreads = manifest.pages?.map((page) => page.spread).filter(Boolean) ?? [];
+    expect(manifestSpreads.length).toBe(2);
+    manifest.pages?.forEach((page) => {
+      if (!page.spread) return;
+      const baseId = page.pageId.slice(0, -2);
+      expect(page.spread.sourcePageId).toBe(baseId);
+      expect(["left", "right"]).toContain(page.spread.side);
+    });
+
+    const reviewRaw = await fs.readFile(path.join(runDir, "review-queue.json"), "utf-8");
+    const reviewQueue = JSON.parse(reviewRaw) as {
+      items?: Array<{ spread?: { sourcePageId?: string; side?: string }; pageId: string }>;
+    };
+    const reviewSpreads = reviewQueue.items?.map((item) => item.spread).filter(Boolean) ?? [];
+    expect(reviewSpreads.length).toBe(2);
+    reviewQueue.items?.forEach((item) => {
+      if (!item.spread) return;
+      const baseId = item.pageId.slice(0, -2);
+      expect(item.spread.sourcePageId).toBe(baseId);
+      expect(["left", "right"]).toContain(item.spread.side);
+    });
   });
 
   it("runPipeline cleans stale normalized exports when checksums change", async () => {

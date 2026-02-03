@@ -108,6 +108,11 @@ export interface ReviewItem {
   reason: "quality-gate" | "semantic-layout";
   previews: ReviewPreview[];
   suggestedAction: "confirm" | "adjust";
+  spread?: {
+    sourcePageId: string;
+    side: "left" | "right";
+    gutter?: { startRatio: number; endRatio: number };
+  };
 }
 
 export interface ReviewQueue {
@@ -171,6 +176,11 @@ export interface PageLayoutElement {
 export interface PageLayoutSidecar {
   pageId: string;
   source: { path: string; checksum: string; pageIndex?: number };
+  spread?: {
+    sourcePageId: string;
+    side: "left" | "right";
+    gutter?: { startRatio: number; endRatio: number };
+  };
   dimensions: { width: number; height: number; unit: "mm" | "cm" | "in" };
   dpi: number;
   normalization: {

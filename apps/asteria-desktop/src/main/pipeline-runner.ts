@@ -125,6 +125,17 @@ type SpreadSplitResult = {
   height?: number;
 };
 
+type GutterRatio = {
+  startRatio: number;
+  endRatio: number;
+};
+
+type SpreadMetadata = {
+  sourcePageId: string;
+  side: "left" | "right";
+  gutter?: GutterRatio;
+};
+
 const detectSpread = async (page: PageData): Promise<SpreadSplitResult> => {
   try {
     const image = sharp(page.originalPath);
@@ -201,11 +212,43 @@ const detectSpread = async (page: PageData): Promise<SpreadSplitResult> => {
   }
 };
 
+const parseSpreadId = (
+  pageId: string
+): { sourcePageId: string; side: "left" | "right" } | null => {
+  if (pageId.endsWith("_L")) {
+    return { sourcePageId: pageId.slice(0, -2), side: "left" };
+  }
+  if (pageId.endsWith("_R")) {
+    return { sourcePageId: pageId.slice(0, -2), side: "right" };
+  }
+  return null;
+};
+
+const resolveSpreadMetadata = (
+  pageId: string,
+  spreadMetaByPageId?: Map<string, SpreadMetadata>,
+  gutterByPageId?: Map<string, GutterRatio>
+): SpreadMetadata | undefined => {
+  const direct = spreadMetaByPageId?.get(pageId);
+  if (direct) {
+    const gutter = gutterByPageId?.get(pageId);
+    return gutter ? { ...direct, gutter } : direct;
+  }
+  const parsed = parseSpreadId(pageId);
+  if (!parsed) return undefined;
+  const gutter = gutterByPageId?.get(pageId);
+  return gutter ? { ...parsed, gutter } : parsed;
+};
+
 const splitSpreadPage = async (
   page: PageData,
   split: SpreadSplitResult,
   runDir: string
-): Promise<PageData[] | null> => {
+): Promise<{
+  pages: PageData[];
+  gutterByPageId: Map<string, GutterRatio>;
+  spreadMetaByPageId: Map<string, SpreadMetadata>;
+} | null> => {
   if (!split.shouldSplit || split.gutterStart === undefined || split.gutterEnd === undefined) {
     return null;
   }
@@ -254,7 +297,30 @@ const splitSpreadPage = async (
     confidenceScores: baseScores,
   };
 
-  return [leftPage, rightPage];
+  const gutterRatioLeft = clamp01(gutterWidth / Math.max(1, leftWidth));
+  const gutterRatioRight = clamp01(gutterWidth / Math.max(1, rightWidth));
+  const gutterByPageId = new Map<string, GutterRatio>([
+    [leftPage.id, { startRatio: clamp01(1 - gutterRatioLeft), endRatio: 1 }],
+    [rightPage.id, { startRatio: 0, endRatio: gutterRatioRight }],
+  ]);
+  const spreadMetaByPageId = new Map<string, SpreadMetadata>([
+    [
+      leftPage.id,
+      {
+        sourcePageId: page.id,
+        side: "left",
+      },
+    ],
+    [
+      rightPage.id,
+      {
+        sourcePageId: page.id,
+        side: "right",
+      },
+    ],
+  ]);
+
+  return { pages: [leftPage, rightPage], gutterByPageId, spreadMetaByPageId };
 };
 
 type LayoutAssessment = {
@@ -985,7 +1051,9 @@ const buildReviewQueue = (
   runId: string,
   projectId: string,
   context: QualityGateContext | undefined,
-  config: PipelineConfig
+  config: PipelineConfig,
+  spreadMetaByPageId?: Map<string, SpreadMetadata>,
+  gutterByPageId?: Map<string, GutterRatio>
 ): ReviewQueue => {
   const items: ReviewItem[] = [];
   const qaConfig = config.steps.qa;
@@ -1037,6 +1105,7 @@ const buildReviewQueue = (
       previews.push({ kind: "normalized", ...norm.previews.normalized });
     }
 
+    const spread = resolveSpreadMetadata(page.id, spreadMetaByPageId, gutterByPageId);
     items.push({
       pageId: page.id,
       filename: page.filename,
@@ -1046,6 +1115,7 @@ const buildReviewQueue = (
       reason: qualityGate.accepted ? "semantic-layout" : "quality-gate",
       previews,
       suggestedAction: qualityGate.accepted ? "confirm" : "adjust",
+      spread,
     });
   });
 
@@ -1357,7 +1427,7 @@ const attachOverlays = async (
   normalization: Map<string, NormalizationResult>,
   runDir: string,
   bookModel?: BookModel,
-  gutterByPageId?: Map<string, { start: number; end: number }>,
+  gutterByPageId?: Map<string, GutterRatio>,
   control?: RunControl
 ): Promise<void> => {
   const overlayDir = getOverlayDir(runDir);
@@ -1395,8 +1465,8 @@ const attachOverlays = async (
 
         const gutter = gutterByPageId?.get(item.pageId);
         if (gutter) {
-          const gx0 = Math.max(0, Math.round(width * gutter.start));
-          const gx1 = Math.min(width - 1, Math.round(width * gutter.end));
+          const gx0 = Math.max(0, Math.round(width * gutter.startRatio));
+          const gx1 = Math.min(width - 1, Math.round(width * gutter.endRatio));
           overlayBoxes.push({
             box: [gx0, 0, gx1, height - 1],
             color: "#facc15",
@@ -1499,11 +1569,16 @@ const applySpreadSplitIfEnabled = async (
   options: PipelineRunnerOptions,
   config: PipelineConfig,
   runDir: string
-): Promise<{ pages: PageData[]; gutterByPageId: Map<string, { start: number; end: number }> }> => {
-  const gutterByPageId = new Map<string, { start: number; end: number }>();
+): Promise<{
+  pages: PageData[];
+  gutterByPageId: Map<string, GutterRatio>;
+  spreadMetaByPageId: Map<string, SpreadMetadata>;
+}> => {
+  const gutterByPageId = new Map<string, GutterRatio>();
+  const spreadMetaByPageId = new Map<string, SpreadMetadata>();
   const enableSplit = options.enableSpreadSplit ?? config.steps.spread_split.enabled;
   if (!enableSplit) {
-    return { pages: scanConfig.pages, gutterByPageId };
+    return { pages: scanConfig.pages, gutterByPageId, spreadMetaByPageId };
   }
   const splitOutputDir = runDir;
   const splitPages: PageData[] = [];
@@ -1513,7 +1588,11 @@ const applySpreadSplitIfEnabled = async (
     if (split.shouldSplit && split.confidence >= threshold) {
       const splitResult = await splitSpreadPage(page, split, splitOutputDir);
       if (splitResult) {
-        splitPages.push(...splitResult);
+        splitPages.push(...splitResult.pages);
+        splitResult.gutterByPageId.forEach((value, key) => gutterByPageId.set(key, value));
+        splitResult.spreadMetaByPageId.forEach((value, key) =>
+          spreadMetaByPageId.set(key, value)
+        );
         continue;
       }
     }
@@ -1528,14 +1607,14 @@ const applySpreadSplitIfEnabled = async (
         split.gutterStartRatio < split.gutterEndRatio
       ) {
         gutterByPageId.set(page.id, {
-          start: split.gutterStartRatio,
-          end: split.gutterEndRatio,
+          startRatio: split.gutterStartRatio,
+          endRatio: split.gutterEndRatio,
         });
       }
     }
     splitPages.push(page);
   }
-  return { pages: splitPages, gutterByPageId };
+  return { pages: splitPages, gutterByPageId, spreadMetaByPageId };
 };
 
 const applySampling = (
@@ -1687,6 +1766,8 @@ const savePipelineOutputs = async (params: {
   appVersion: string;
   configHash: string;
   configSnapshot: { resolved: PipelineConfig; sources: PipelineConfigSources };
+  gutterByPageId?: Map<string, GutterRatio>;
+  spreadMetaByPageId?: Map<string, SpreadMetadata>;
   control?: RunControl;
 }): Promise<void> => {
   await fs.mkdir(params.outputDir, { recursive: true });
@@ -1740,6 +1821,8 @@ const savePipelineOutputs = async (params: {
     params.runId,
     params.native,
     params.bookModel,
+    params.gutterByPageId,
+    params.spreadMetaByPageId,
     params.control
   );
 
@@ -1774,49 +1857,57 @@ const savePipelineOutputs = async (params: {
       modelHashes: [],
       seed: "static",
     },
-    pages: Array.from(params.normalizationResults.values()).map((norm) => ({
-      pageId: norm.pageId,
-      checksum: checksumById.get(norm.pageId) ?? "",
-      dhash: dhashById.get(norm.pageId) ?? "0",
-      normalizedFile: path.basename(norm.normalizedPath),
-      previews: [
-        norm.previews?.source?.path ? path.basename(norm.previews.source.path) : undefined,
-        norm.previews?.normalized?.path ? path.basename(norm.previews.normalized.path) : undefined,
-      ].filter(Boolean),
-      stages: {
-        preprocess: {
-          backgroundMean: norm.stats.backgroundMean,
-          backgroundStd: norm.stats.backgroundStd,
-          maskCoverage: norm.stats.maskCoverage,
+    pages: Array.from(params.normalizationResults.values()).map((norm) => {
+      const spread = resolveSpreadMetadata(
+        norm.pageId,
+        params.spreadMetaByPageId,
+        params.gutterByPageId
+      );
+      return {
+        pageId: norm.pageId,
+        checksum: checksumById.get(norm.pageId) ?? "",
+        dhash: dhashById.get(norm.pageId) ?? "0",
+        normalizedFile: path.basename(norm.normalizedPath),
+        previews: [
+          norm.previews?.source?.path ? path.basename(norm.previews.source.path) : undefined,
+          norm.previews?.normalized?.path ? path.basename(norm.previews.normalized.path) : undefined,
+        ].filter(Boolean),
+        spread,
+        stages: {
+          preprocess: {
+            backgroundMean: norm.stats.backgroundMean,
+            backgroundStd: norm.stats.backgroundStd,
+            maskCoverage: norm.stats.maskCoverage,
+          },
+          deskew: {
+            angleDeg: norm.skewAngle,
+            confidence: norm.stats.skewConfidence,
+            applied: norm.corrections?.deskewApplied ?? true,
+            residualDeg: norm.corrections?.skewResidualAngle ?? 0,
+          },
+          dewarp: {
+            method: norm.corrections?.alignment?.applied ? "affine" : "none",
+            drift: norm.corrections?.alignment?.drift ?? 0,
+            applied: norm.corrections?.alignment?.applied ?? false,
+          },
+          shading: norm.shading
+            ? {
+                method: norm.shading.method,
+                confidence: norm.shading.confidence,
+                residual: norm.shading.residual ?? null,
+                applied: norm.shading.applied,
+              }
+            : { method: "none", confidence: 0, residual: null, applied: false },
+          layoutDetection: {
+            profile: layoutSummaries.get(norm.pageId)?.profile ?? "body",
+            confidence: layoutSummaries.get(norm.pageId)?.confidence ?? 0,
+            elementCount: layoutSummaries.get(norm.pageId)?.elementCount ?? 0,
+            source: layoutSummaries.get(norm.pageId)?.source ?? "unknown",
+          },
+          confidenceGate: norm.confidenceGate ?? { passed: true, reasons: [] },
         },
-        deskew: {
-          angleDeg: norm.skewAngle,
-          confidence: norm.stats.skewConfidence,
-          applied: norm.corrections?.deskewApplied ?? true,
-          residualDeg: norm.corrections?.skewResidualAngle ?? 0,
-        },
-        dewarp: {
-          method: norm.corrections?.alignment?.applied ? "affine" : "none",
-          drift: norm.corrections?.alignment?.drift ?? 0,
-          applied: norm.corrections?.alignment?.applied ?? false,
-        },
-        shading: norm.shading
-          ? {
-              method: norm.shading.method,
-              confidence: norm.shading.confidence,
-              residual: norm.shading.residual ?? null,
-              applied: norm.shading.applied,
-            }
-          : { method: "none", confidence: 0, residual: null, applied: false },
-        layoutDetection: {
-          profile: layoutSummaries.get(norm.pageId)?.profile ?? "body",
-          confidence: layoutSummaries.get(norm.pageId)?.confidence ?? 0,
-          elementCount: layoutSummaries.get(norm.pageId)?.elementCount ?? 0,
-          source: layoutSummaries.get(norm.pageId)?.source ?? "unknown",
-        },
-        confidenceGate: norm.confidenceGate ?? { passed: true, reasons: [] },
-      },
-    })),
+      };
+    }),
   };
   await writeJsonAtomic(getRunManifestPath(params.runDir), manifest);
 
@@ -2295,7 +2386,9 @@ export async function runPipeline(options: PipelineRunnerOptions): Promise<Pipel
         ...qualityContext,
         medianMaskCoverage,
       },
-      resolvedConfig
+      resolvedConfig,
+      spreadSplitResult.spreadMetaByPageId,
+      spreadSplitResult.gutterByPageId
     );
     emitProgress({
       runId,
@@ -2363,6 +2456,8 @@ export async function runPipeline(options: PipelineRunnerOptions): Promise<Pipel
         appVersion,
         configHash,
         configSnapshot: configSnapshot ?? { resolved: resolvedConfig, sources },
+        gutterByPageId: spreadSplitResult.gutterByPageId,
+        spreadMetaByPageId: spreadSplitResult.spreadMetaByPageId,
         control,
       });
     }
@@ -2485,6 +2580,8 @@ const writeSidecars = async (
   runId: string,
   native: PipelineCoreNative | null,
   bookModel?: BookModel,
+  gutterByPageId?: Map<string, GutterRatio>,
+  spreadMetaByPageId?: Map<string, SpreadMetadata>,
   control?: RunControl
 ): Promise<
   Map<
@@ -2559,6 +2656,7 @@ const writeSidecars = async (
         lineStraightnessResidual,
         confidence: norm.stats.baselineConsistency ?? 0.5,
       };
+      const spread = resolveSpreadMetadata(page.id, spreadMetaByPageId, gutterByPageId);
 
       const sidecar = {
         version: "1.0.0",
@@ -2567,6 +2665,7 @@ const writeSidecars = async (
           path: page.originalPath,
           checksum: page.checksum ?? "",
         },
+        spread,
         dimensions: {
           width: norm.dimensionsMm.width,
           height: norm.dimensionsMm.height,
