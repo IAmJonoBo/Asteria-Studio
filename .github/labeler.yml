@@ -1,0 +1,31 @@
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - "**/*.md"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/package.json"
+          - pnpm-lock.yaml
+          - "**/Cargo.lock"
+          - "**/Cargo.toml"
+
+javascript:
+  - changed-files:
+      - any-glob-to-any-file:
+          - apps/asteria-desktop/**
+          - packages/**
+          - scripts/**
+          - "**/*.ts"
+          - "**/*.tsx"
+          - "**/*.js"
+          - "**/*.jsx"
+
+codex:
+  - changed-files:
+      - any-glob-to-any-file:
+          - AGENTS.md
+          - .github/copilot-instructions.md
+          - .github/instructions/**

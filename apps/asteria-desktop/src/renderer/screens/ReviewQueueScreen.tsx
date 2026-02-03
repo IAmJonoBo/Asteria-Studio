@@ -1,7 +1,12 @@
 import type { JSX, KeyboardEvent, MouseEvent, WheelEvent, RefObject, PointerEvent } from "react";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcut.js";
-import type { LayoutProfile, ReviewQueue, PageLayoutSidecar } from "../../ipc/contracts.js";
+import type {
+  LayoutProfile,
+  ReviewQueue,
+  PageLayoutSidecar,
+  PageTemplate,
+} from "../../ipc/contracts.js";
 import type { GuideGroup } from "../guides/registry.js";
 import { getDefaultGuideLayerVisibility, renderGuideLayers } from "../guides/registry.js";
 import { snapBoxWithSources, getBoxSnapCandidates } from "../utils/snapping.js";
@@ -1338,6 +1343,16 @@ type ReviewQueueLayoutProps = {
   applyTargetCount: number;
   templateSummary: TemplateSummary | null;
   representativePages: ReviewPage[];
+  templateClusters: PageTemplate[];
+  currentTemplateCluster: PageTemplate | null;
+  templateAssignmentId?: string;
+  templateAssignmentConfidence?: number;
+  selectedTemplateClusterId: string | null;
+  setSelectedTemplateClusterId: (value: string | null) => void;
+  handleTemplateClusterAction: (action: "confirm" | "correct") => Promise<void>;
+  isTemplateActionPending: boolean;
+  templateActionStatus: string | null;
+  templateActionError: string | null;
   onApplyScopeChange: (scope: TemplateScope) => void;
   onSelectIndex: (index: number) => void;
   onScroll: (scrollTop: number) => void;
@@ -1419,6 +1434,16 @@ const ReviewQueueLayout = ({
   applyTargetCount,
   templateSummary,
   representativePages,
+  templateClusters,
+  currentTemplateCluster,
+  templateAssignmentId,
+  templateAssignmentConfidence,
+  selectedTemplateClusterId,
+  setSelectedTemplateClusterId,
+  handleTemplateClusterAction,
+  isTemplateActionPending,
+  templateActionStatus,
+  templateActionError,
   onApplyScopeChange,
   onSelectIndex,
   onScroll,
@@ -2057,7 +2082,9 @@ const ReviewQueueLayout = ({
                       })}
                     </div>
                   ) : (
-                    <div style={{ marginTop: "8px", fontSize: "11px", color: "var(--text-secondary)" }}>
+                    <div
+                      style={{ marginTop: "8px", fontSize: "11px", color: "var(--text-secondary)" }}
+                    >
                       No template clusters available in the sidecar.
                     </div>
                   )}
@@ -2082,7 +2109,12 @@ const ReviewQueueLayout = ({
                       {isTemplateActionPending ? "Saving…" : "Confirm cluster"}
                     </button>
                     <label
-                      style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "11px",
+                      }}
                     >
                       <span>Correct to</span>
                       <select
@@ -2138,16 +2170,26 @@ const ReviewQueueLayout = ({
                         background: "var(--bg-surface)",
                       }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: "13px" }}>{templateSummary.label}</div>
+                      <div style={{ fontWeight: 600, fontSize: "13px" }}>
+                        {templateSummary.label}
+                      </div>
                       <div
-                        style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--text-secondary)",
+                          marginTop: "4px",
+                        }}
                       >
                         {templateSummary.pages.length} pages • Avg{" "}
                         {(templateSummary.averageConfidence * 100).toFixed(0)}% confidence • Min{" "}
                         {(templateSummary.minConfidence * 100).toFixed(0)}%
                       </div>
                       <div
-                        style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--text-secondary)",
+                          marginTop: "4px",
+                        }}
                       >
                         Guide coverage: {(templateSummary.guideCoverage * 100).toFixed(0)}%
                       </div>
@@ -2574,9 +2616,7 @@ export function ReviewQueueScreen({
     if (templateAssignmentId) {
       return templateClusters.find((template) => template.id === templateAssignmentId) ?? null;
     }
-    return (
-      templateClusters.find((template) => template.pageIds.includes(currentPage.id)) ?? null
-    );
+    return templateClusters.find((template) => template.pageIds.includes(currentPage.id)) ?? null;
   }, [currentPage, templateAssignmentId, templateClusters]);
   const [selectedTemplateClusterId, setSelectedTemplateClusterId] = useState<string | null>(null);
   const [templateActionStatus, setTemplateActionStatus] = useState<string | null>(null);
@@ -3000,9 +3040,9 @@ export function ReviewQueueScreen({
       return;
     }
     const templateId =
-      action === "confirm" ? currentTemplateCluster?.id ?? templateAssignmentId : null;
+      action === "confirm" ? (currentTemplateCluster?.id ?? templateAssignmentId) : null;
     const targetTemplateId =
-      action === "correct" ? selectedTemplateClusterId ?? null : templateId;
+      action === "correct" ? (selectedTemplateClusterId ?? null) : templateId;
     const resolvedTemplateId = action === "confirm" ? templateId : targetTemplateId;
     if (!resolvedTemplateId) {
       setTemplateActionError("No template cluster selected.");
@@ -3255,6 +3295,16 @@ export function ReviewQueueScreen({
       applyTargetCount={applyTargetCount}
       templateSummary={templateSummary}
       representativePages={representativePages}
+      templateClusters={templateClusters}
+      currentTemplateCluster={currentTemplateCluster}
+      templateAssignmentId={templateAssignmentId}
+      templateAssignmentConfidence={templateAssignmentConfidence}
+      selectedTemplateClusterId={selectedTemplateClusterId}
+      setSelectedTemplateClusterId={setSelectedTemplateClusterId}
+      handleTemplateClusterAction={handleTemplateClusterAction}
+      isTemplateActionPending={isTemplateActionPending}
+      templateActionStatus={templateActionStatus}
+      templateActionError={templateActionError}
       onApplyScopeChange={setApplyScope}
       onSelectIndex={setSelectedIndex}
       onScroll={setScrollTop}

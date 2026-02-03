@@ -77,6 +77,11 @@
     "vitest": "^4.0.18",
     "zod": "^4.3.6"
   },
+  "ts-node": {
+    "esm": true,
+    "preferTsExts": true,
+    "experimentalSpecifierResolution": "node"
+  },
   "build": {
     "appId": "studio.asteria.app",
     "productName": "Asteria Studio",

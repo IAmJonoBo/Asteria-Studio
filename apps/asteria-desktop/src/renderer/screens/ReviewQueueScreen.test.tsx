@@ -211,7 +211,7 @@ describe("ReviewQueueScreen", () => {
     render(<ReviewQueueScreen runId="run-4" runDir="/tmp/runs/run-4" />);
 
     expect(await screen.findByText(/Template clusters/i)).toBeInTheDocument();
-    expect(screen.getByText(/template-01/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/template-01/i).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: /confirm template cluster/i }));
 
@@ -223,6 +223,7 @@ describe("ReviewQueueScreen", () => {
         pages: ["page-1"],
       })
     );
+    expect(await screen.findByText(/Template assignment confirmed/i)).toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: /template cluster selection/i }),
@@ -237,5 +238,53 @@ describe("ReviewQueueScreen", () => {
         scope: "template",
       })
     );
+    expect(await screen.findByText(/Template correction saved/i)).toBeInTheDocument();
+  });
+
+  it("shows template action errors when IPC is unavailable", async () => {
+    (globalThis as typeof globalThis & { asteria?: unknown }).asteria = {
+      ipc: {
+        "asteria:fetch-review-queue": vi.fn().mockResolvedValue({
+          runId: "run-5",
+          projectId: "proj",
+          generatedAt: "2024-01-01",
+          items: [
+            {
+              pageId: "page-1",
+              filename: "page-1.png",
+              layoutProfile: "body",
+              layoutConfidence: 0.8,
+              reason: "semantic-layout",
+              qualityGate: { accepted: true, reasons: [] },
+              previews: [{ kind: "normalized", path: "/tmp/norm.png", width: 16, height: 16 }],
+            },
+          ],
+        }),
+        "asteria:fetch-sidecar": vi.fn().mockResolvedValue({
+          templateId: "template-01",
+          bookModel: {
+            pageTemplates: [
+              {
+                id: "template-01",
+                pageType: "body",
+                pageIds: ["page-1"],
+                confidence: 0.9,
+              },
+            ],
+          },
+          normalization: {},
+          elements: [],
+        }),
+      },
+    };
+
+    const user = userEvent.setup();
+
+    render(<ReviewQueueScreen runId="run-5" runDir="/tmp/runs/run-5" />);
+
+    expect(await screen.findByText(/Template clusters/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /confirm template cluster/i }));
+
+    expect(await screen.findByText(/IPC unavailable/i)).toBeInTheDocument();
   });
 });

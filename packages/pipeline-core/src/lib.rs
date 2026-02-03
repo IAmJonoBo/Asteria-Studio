@@ -276,7 +276,7 @@ pub fn baseline_metrics_js(data: Buffer, width: u32, height: u32) -> BaselineMet
             .map(|pair| (pair[1] as f64 - pair[0] as f64) / ((height - 1) as f64))
             .collect();
         deltas.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        spacing_norm = if deltas.len() % 2 == 0 {
+        spacing_norm = if deltas.len().is_multiple_of(2) {
             let mid = deltas.len() / 2;
             (deltas[mid - 1] + deltas[mid]) / 2.0
         } else {
@@ -286,7 +286,7 @@ pub fn baseline_metrics_js(data: Buffer, width: u32, height: u32) -> BaselineMet
         mad_values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         spacing_mad_norm = if mad_values.is_empty() {
             0.0
-        } else if mad_values.len() % 2 == 0 {
+        } else if mad_values.len().is_multiple_of(2) {
             let mid = mad_values.len() / 2;
             (mad_values[mid - 1] + mad_values[mid]) / 2.0
         } else {
@@ -299,7 +299,7 @@ pub fn baseline_metrics_js(data: Buffer, width: u32, height: u32) -> BaselineMet
                 .map(|y_norm| y_norm % spacing_norm)
                 .collect();
             offsets.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-            offset_norm = if offsets.len() % 2 == 0 {
+            offset_norm = if offsets.len().is_multiple_of(2) {
                 let mid = offsets.len() / 2;
                 (offsets[mid - 1] + offsets[mid]) / 2.0
             } else {
