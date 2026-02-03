@@ -108,6 +108,14 @@ const defaultConfig: PipelineConfig = {
     include_json_sidecars: true,
     naming: "{projectId}_{pageId}_{runId}",
   },
+  snapping: {
+    enabled: true,
+    radius_px: 8,
+    min_confidence: { template: 0.6, detected: 0.7, baseline: 0.6, user: 0 },
+    weighting: { template: 1, detected: 0.8, baseline: 0.6, user: 1 },
+  },
+  templates: { enabled: true, clustering: { min_pages: 6, min_similarity: 0.7, max_clusters: 12 } },
+  guides: { lod: { major_only_zoom: 0.8, labels_zoom: 1.6 } },
   logging: { level: "info", per_page_logs: true, keep_logs: true },
 };
 
