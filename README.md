@@ -125,8 +125,17 @@ pnpm format:write
 # Build production assets + launcher
 pnpm build
 
+# Verify build artefacts
+pnpm build:verify
+
 # Run built app (macOS/Linux)
 apps/asteria-desktop/dist/asteria-studio
+
+# Package distributables
+pnpm package
+
+# Verify packaged artefacts (checks for native modules like sharp)
+pnpm package:verify
 ```
 
 ### Pipeline Evaluation

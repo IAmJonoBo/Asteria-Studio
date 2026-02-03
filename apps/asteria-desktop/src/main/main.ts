@@ -19,6 +19,7 @@ const ensureSharp = async (): Promise<boolean> => {
       "Possible fixes:",
       "- Ensure optional dependencies are installed (pnpm install --include=optional).",
       "- For packaged builds, ensure native modules are unpacked from ASAR.",
+      "- If packaging, run `pnpm -C apps/asteria-desktop exec electron-builder install-app-deps`.",
       "- Rebuild sharp for the current Electron runtime if needed.",
     ].join("\n");
     console.error(message);

@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { info, section, startStep } from "./cli.mjs";
 
 const args = process.argv.slice(2);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,11 @@ const existing = (process.env.NODE_OPTIONS ?? "")
 
 const nodeOptions = [...existing, `--localstorage-file=${tmpFile}`].join(" ");
 
+section("VITEST RUNNER");
+info(`Workspace: ${appRoot}`);
+info(`Args: ${args.length > 0 ? args.join(" ") : "(default)"}`);
+const spawnStep = startStep("Launch Vitest");
+
 const child = spawn(binPath, args, {
   cwd: appRoot,
   stdio: "inherit",
@@ -27,5 +33,6 @@ const child = spawn(binPath, args, {
 });
 
 child.on("exit", (code) => {
+  spawnStep(code === 0 ? "ok" : "fail", `exit ${code ?? 1}`);
   process.exit(code ?? 1);
 });
