@@ -477,6 +477,34 @@ describe("Pipeline Runner", () => {
     await expect(fs.stat(path.join(outputDir, "overlays"))).rejects.toThrow();
   });
 
+  it("isolates artifacts between explicit run ids", async () => {
+    const outputDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-run-isolation-"));
+    const runA = await runPipeline({
+      projectRoot,
+      projectId: "run-isolation",
+      outputDir,
+      runId: "run-a",
+      sampleCount: 1,
+    });
+    const runB = await runPipeline({
+      projectRoot,
+      projectId: "run-isolation",
+      outputDir,
+      runId: "run-b",
+      sampleCount: 1,
+    });
+
+    expect(runA.success).toBe(true);
+    expect(runB.success).toBe(true);
+
+    const runDirA = getRunDir(outputDir, "run-a");
+    const runDirB = getRunDir(outputDir, "run-b");
+
+    await expect(fs.stat(getRunManifestPath(runDirA))).resolves.toBeTruthy();
+    await expect(fs.stat(getRunManifestPath(runDirB))).resolves.toBeTruthy();
+    expect(runDirA).not.toBe(runDirB);
+  });
+
   it("runPipeline applies second-pass corrections for low-acceptance pages", async () => {
     const testDir = await fs.mkdtemp(path.join(os.tmpdir(), "asteria-second-pass-"));
     const filenames = ["low-mask.jpg", "low-skew.jpg", "shadow.jpg", "body.jpg"];
