@@ -668,7 +668,7 @@ export function registerIpcHandlers(): void {
       const trainingSignals: Array<Record<string, unknown>> = [];
       const templateLinkage = new Map<
         string,
-        { template: Record<string, unknown>; pages: Set<string> }
+        { template: Record<string, unknown>; pages: Set<string>; confirmedPages: Set<string> }
       >();
 
       for (const decision of decisions) {
@@ -709,8 +709,13 @@ export function registerIpcHandlers(): void {
         }
 
         const safePageId = sanitizeTrainingId(pageId);
-        const runningHeadTemplates = Array.isArray(sidecar?.bookModel?.runningHeadTemplates)
-          ? (sidecar?.bookModel?.runningHeadTemplates as Array<Record<string, unknown>>)
+        const isConfirmed = decision.decision !== "reject";
+        const bookModel =
+          sidecar?.bookModel && typeof sidecar.bookModel === "object"
+            ? (sidecar.bookModel as Record<string, unknown>)
+            : null;
+        const runningHeadTemplates = Array.isArray(bookModel?.runningHeadTemplates)
+          ? (bookModel.runningHeadTemplates as Array<Record<string, unknown>>)
           : [];
         for (const template of runningHeadTemplates) {
           if (!template || typeof template !== "object") continue;
@@ -720,8 +725,12 @@ export function registerIpcHandlers(): void {
           const entry = templateLinkage.get(templateId) ?? {
             template,
             pages: new Set<string>(),
+            confirmedPages: new Set<string>(),
           };
           entry.pages.add(pageId);
+          if (isConfirmed) {
+            entry.confirmedPages.add(pageId);
+          }
           templateLinkage.set(templateId, entry);
         }
 
@@ -782,13 +791,14 @@ export function registerIpcHandlers(): void {
         const templateSignal = {
           runId,
           templateId,
-          confirmed: entry.pages.size > 0,
+          confirmed: entry.confirmedPages.size > 0,
           timestamps: {
             submittedAt,
           },
           appVersion: determinism.appVersion,
           configHash: determinism.configHash,
           pages: Array.from(entry.pages),
+          confirmedPages: Array.from(entry.confirmedPages),
           auto: entry.template,
           final: entry.template,
           delta: undefined,

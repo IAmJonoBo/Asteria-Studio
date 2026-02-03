@@ -738,6 +738,257 @@ describe("IPC handler registration", () => {
     );
   });
 
+  it("submit-review creates training directory structure", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-1");
+    const trainingDir = path.join(runDir, "training");
+    const trainingPageDir = path.join(trainingDir, "page");
+    const trainingTemplateDir = path.join(trainingDir, "template");
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-1",
+      [{ pageId: "page1", decision: "accept" }]
+    );
+
+    expect(mkdir).toHaveBeenCalledWith(path.join(outputDir, "reviews"), { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith(trainingPageDir, { recursive: true });
+    expect(mkdir).toHaveBeenCalledWith(trainingTemplateDir, { recursive: true });
+  });
+
+  it("submit-review writes per-page training records with all fields", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar = {
+      pageId: "page1",
+      normalization: { cropBox: [0, 0, 100, 100] },
+      elements: [{ type: "text", bbox: [10, 10, 50, 50] }],
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile.mockResolvedValueOnce(
+      JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+    ); // report read
+    readFile.mockResolvedValueOnce(JSON.stringify(sidecar)); // sidecar read
+    readFile.mockRejectedValueOnce(new Error("no override")); // override read (fails)
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-2",
+      [{ pageId: "page1", decision: "accept", notes: "looks good" }]
+    );
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-2");
+    const trainingPageDir = path.join(runDir, "training", "page");
+
+    const writeCall = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training/page") && String(call[0]).includes("page1.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const written = JSON.parse(writeCall[1] as string);
+    expect(written).toMatchObject({
+      runId: "run-train-2",
+      pageId: "page1",
+      decision: "accept",
+      notes: "looks good",
+      confirmed: true,
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      templateIds: ["template1"],
+      sidecarPath: "sidecars/page1.json",
+    });
+    expect(written.timestamps).toHaveProperty("submittedAt");
+    expect(written.timestamps).toHaveProperty("appliedAt");
+    expect(written.auto).toHaveProperty("normalization");
+    expect(written.auto).toHaveProperty("elements");
+    expect(written.final).toHaveProperty("normalization");
+  });
+
+  it("submit-review writes per-template training records with page linkage", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar1 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar2 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar1)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar2)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page2 override (fails)
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-3",
+      [
+        { pageId: "page1", decision: "accept" },
+        { pageId: "page2", decision: "accept" },
+      ]
+    );
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-3");
+    const trainingTemplateDir = path.join(runDir, "training", "template");
+
+    const writeCall = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training/template") && String(call[0]).includes("template1.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const written = JSON.parse(writeCall[1] as string);
+    expect(written).toMatchObject({
+      runId: "run-train-3",
+      templateId: "template1",
+      confirmed: true,
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      pages: expect.arrayContaining(["page1", "page2"]),
+      confirmedPages: expect.arrayContaining(["page1", "page2"]),
+    });
+  });
+
+  it("submit-review writes training manifest with counts", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page2 override (fails)
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-4",
+      [
+        { pageId: "page1", decision: "accept" },
+        { pageId: "page2", decision: "reject" },
+      ]
+    );
+
+    const outputDir = path.join(process.cwd(), "pipeline-results");
+    const runDir = getRunDir(outputDir, "run-train-4");
+    const trainingDir = path.join(runDir, "training");
+
+    const writeCall = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training") && String(call[0]).includes("manifest.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const manifest = JSON.parse(writeCall[1] as string);
+    expect(manifest).toMatchObject({
+      runId: "run-train-4",
+      appVersion: "1.0.0",
+      configHash: "abc123",
+      counts: {
+        pages: 2,
+        templates: 1,
+      },
+    });
+    expect(manifest.pages).toHaveLength(2);
+    expect(manifest.templates).toHaveLength(1);
+  });
+
+  it("submit-review uses unknown determinism when report missing", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    readFile.mockRejectedValueOnce(new Error("missing report"));
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-5",
+      [{ pageId: "page1", decision: "accept" }]
+    );
+
+    const writeCall = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training") && String(call[0]).includes("manifest.json")
+    );
+    expect(writeCall).toBeDefined();
+    if (!writeCall) throw new Error("writeCall not found");
+    const manifest = JSON.parse(writeCall[1] as string);
+    expect(manifest.appVersion).toBe("unknown");
+    expect(manifest.configHash).toBe("unknown");
+  });
+
+  it("submit-review template confirmed field reflects actual page decisions", async () => {
+    registerIpcHandlers();
+    const handler = handlers.get("asteria:submit-review");
+    expect(handler).toBeDefined();
+
+    const sidecar1 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar2 = {
+      bookModel: { runningHeadTemplates: [{ id: "template1", pattern: "Chapter {n}" }] },
+    };
+    const sidecar3 = {
+      bookModel: { runningHeadTemplates: [{ id: "template2", pattern: "Page {n}" }] },
+    };
+    readFile
+      .mockResolvedValueOnce(
+        JSON.stringify({ determinism: { appVersion: "1.0.0", configHash: "abc123" } })
+      ) // report
+      .mockResolvedValueOnce(JSON.stringify(sidecar1)) // page1 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page1 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar2)) // page2 sidecar
+      .mockRejectedValueOnce(new Error("no override")) // page2 override (fails)
+      .mockResolvedValueOnce(JSON.stringify(sidecar3)) // page3 sidecar
+      .mockRejectedValueOnce(new Error("no override")); // page3 override (fails)
+
+    await (handler as (event: unknown, runId: string, decisions: unknown[]) => Promise<void>)(
+      {},
+      "run-train-6",
+      [
+        { pageId: "page1", decision: "accept" },
+        { pageId: "page2", decision: "reject" },
+        { pageId: "page3", decision: "reject" },
+      ]
+    );
+
+    const template1Call = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training/template") && String(call[0]).includes("template1.json")
+    );
+    expect(template1Call).toBeDefined();
+    if (!template1Call) throw new Error("template1Call not found");
+    const template1 = JSON.parse(template1Call[1] as string);
+    expect(template1.confirmed).toBe(true);
+    expect(template1.pages).toEqual(expect.arrayContaining(["page1", "page2"]));
+    expect(template1.confirmedPages).toEqual(["page1"]);
+
+    const template2Call = writeFile.mock.calls.find((call) =>
+      String(call[0]).includes("training/template") && String(call[0]).includes("template2.json")
+    );
+    expect(template2Call).toBeDefined();
+    if (!template2Call) throw new Error("template2Call not found");
+    const template2 = JSON.parse(template2Call[1] as string);
+    expect(template2.confirmed).toBe(false);
+    expect(template2.pages).toEqual(["page3"]);
+    expect(template2.confirmedPages).toEqual([]);
+  });
+
   it("list-runs returns run index entries", async () => {
     registerIpcHandlers();
     const handler = handlers.get("asteria:list-runs");
